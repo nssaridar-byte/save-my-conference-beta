@@ -2,9 +2,10 @@
 
 import { motion, type Variants } from "framer-motion";
 import { useTheme } from "next-themes";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sun, Moon, Check, Zap, Crown, Shield, BookOpen, MessageSquare } from "lucide-react";
+import { Sun, Moon, Check, Zap, Crown, Shield, BookOpen, MessageSquare, LogOut } from "lucide-react";
 import { useUsageStore, FREE_DAILY_LIMITS } from "@/hooks/use-usage";
 
 const container: Variants = {
@@ -26,6 +27,7 @@ const USAGE_ITEMS = [
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
+  const router = useRouter();
   const { usage, isProUser, getRemainingToday } = useUsageStore();
 
   return (
@@ -256,6 +258,24 @@ export default function Settings() {
                 <p className="text-center text-xs text-muted-foreground">Includes a 3-day free trial · No card required</p>
               </div>
             </div>
+          </div>
+        </motion.div>
+
+        {/* ── Sign Out ── */}
+        <motion.div variants={item} className="rounded-3xl border border-destructive/20 bg-destructive/5 shadow-sm overflow-hidden">
+          <div className="px-8 py-6 border-b border-destructive/10">
+            <h3 className="font-geist font-semibold text-xl text-foreground">Sign Out</h3>
+            <p className="text-sm text-muted-foreground mt-1">End your current session and return to the login screen.</p>
+          </div>
+          <div className="p-8">
+            <Button
+              variant="outline"
+              className="rounded-full border-destructive/40 text-destructive hover:bg-destructive hover:text-destructive-foreground gap-2"
+              onClick={() => router.push("/login")}
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </Button>
           </div>
         </motion.div>
 

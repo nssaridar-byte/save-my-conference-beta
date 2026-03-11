@@ -21,18 +21,21 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex bg-background">
       {/* Left Panel — Branding */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-primary flex-col items-start justify-end p-16">
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-primary flex-col items-center justify-center p-16 text-center">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-black/40 pointer-events-none" />
         <div className="absolute inset-0 opacity-5" style={{backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'%3E%3Cpath d='M0 38.59l2.83-2.83 1.41 1.41L1.41 40H0v-1.41zM0 1.4l2.83 2.83 1.41-1.41L1.41 0H0v1.41zM38.59 40l-2.83-2.83 1.41-1.41L40 38.59V40h-1.41zM40 1.41l-2.83 2.83-1.41-1.41L38.59 0H40v1.41zM20 18.6l2.83-2.83 1.41 1.41L21.41 20l2.83 2.83-1.41 1.41L20 21.41l-2.83 2.83-1.41-1.41L18.59 20l-2.83-2.83 1.41-1.41L20 18.59z'/%3E%3C/g%3E%3C/svg%3E\")"}} />
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-12">
-            <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-white font-playfair font-bold text-xl">M</div>
-            <div>
-              <p className="text-white font-playfair font-bold text-xl tracking-wide">SAVE MY CONFERENCE</p>
-              <p className="text-white/60 text-xs uppercase tracking-widest">MUN Command Center</p>
-            </div>
+        <div className="relative z-10 flex flex-col items-center gap-8 max-w-sm">
+          {/* Logo mark */}
+          <div className="w-16 h-16 rounded-3xl bg-white/20 flex items-center justify-center text-white font-playfair font-bold text-3xl shadow-lg">M</div>
+          {/* Brand name */}
+          <div>
+            <p className="text-white font-playfair font-bold text-2xl tracking-wide">SAVE MY CONFERENCE</p>
+            <p className="text-white/60 text-xs uppercase tracking-widest mt-1">MUN Command Center</p>
           </div>
-          <blockquote className="text-white/90 font-playfair text-3xl font-semibold leading-snug mb-6">
+          {/* Divider */}
+          <div className="w-12 h-px bg-white/30" />
+          {/* Quote */}
+          <blockquote className="text-white/90 font-playfair text-2xl font-semibold leading-snug">
             "Diplomacy is the art of letting someone have your way."
           </blockquote>
           <p className="text-white/50 font-geist text-sm">— Daniele Vare, Italian Diplomat</p>

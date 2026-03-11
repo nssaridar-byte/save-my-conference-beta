@@ -9,7 +9,9 @@ import {
   BrainCircuit,
   Swords,
   ShieldAlert,
+  LogOut,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import {
   Sidebar,
@@ -22,7 +24,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { ThemeSwitcher } from "./theme-switcher";
+
 import { usePathname } from "next/navigation";
 
 const items = [
@@ -67,6 +69,20 @@ const items = [
     icon: ShieldAlert,
   },
 ];
+
+function LogoutButton() {
+  const router = useRouter();
+  return (
+    <SidebarMenuButton
+      tooltip="Log Out"
+      onClick={() => router.push("/login")}
+      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+    >
+      <LogOut className="w-4 h-4" />
+      <span className="font-geist font-medium tracking-wide">Log Out</span>
+    </SidebarMenuButton>
+  );
+}
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -115,7 +131,7 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <ThemeSwitcher />
+            <LogoutButton />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
