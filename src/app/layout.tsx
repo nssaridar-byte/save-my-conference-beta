@@ -3,6 +3,7 @@ import { Inter, Geist, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ConditionalLayout } from "@/components/conditional-layout";
+import { UserProvider } from "../../contexts/UserContext";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -30,19 +31,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${inter.variable} ${geist.variable} ${playfair.variable} antialiased`}
-      >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
+    <UserProvider>
+
+      <html lang="en" suppressHydrationWarning>
+        <body
+          className={`${inter.variable} ${geist.variable} ${playfair.variable} antialiased`}
         >
-          <ConditionalLayout>{children}</ConditionalLayout>
-        </ThemeProvider>
-      </body>
-    </html>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <ConditionalLayout>{children}</ConditionalLayout>
+          </ThemeProvider>
+        </body>
+      </html>
+    </UserProvider>
   );
 }

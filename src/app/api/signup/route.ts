@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { isEmpty } from "../isEmpty"
 import { hash } from "bcrypt"
 import { sign } from "jsonwebtoken"
+import { cookies } from "next/headers"
 
 export async function POST(req: Request) {
     try {
@@ -29,7 +30,13 @@ export async function POST(req: Request) {
 
         const token = await sign({ name, user }, process.env.JWT_SECRET as string)
 
-        return Response.json({ token })
+        const cookieStore = await cookies()
+
+        cookieStore.set("token", token, {
+            secure: true,
+            path: "/"
+        })
+        return Response.json({ user })
     } catch (error: any) {
         return new Response(error, { status: 500 })
     }
