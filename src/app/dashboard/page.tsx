@@ -21,16 +21,11 @@ import { Input } from "@/components/ui/input";
 import { useConferenceStore, type Conference } from "@/hooks/use-conference";
 import axios from "axios";
 
-const container = {
+/* ── Animations ── */
+const container: Variants = {
   hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
+  show: { opacity: 1, transition: { staggerChildren: 0.08 } },
 };
-
 const item: Variants = {
   hidden: { opacity: 0, y: 18 },
   show: {
@@ -480,8 +475,12 @@ function ActiveDashboard({
               </div>
               <p className="text-foreground text-lg">Cybersecurity Threats to International Peace</p>
             </div>
-          </div>
+          </form>
         </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
 
       {/* Preparation card */}
       <motion.div
@@ -543,8 +542,8 @@ function ActiveDashboard({
         >
           <span className="text-sm text-muted-foreground">{label}</span>
           <div className="mt-4 flex items-end justify-between">
-            <span className="text-5xl font-playfair font-bold text-foreground">A-</span>
-            <Trophy className="w-8 h-8 text-primary/20 group-hover:text-primary transition-colors" />
+            <span className="text-5xl font-playfair font-bold">{value}</span>
+            <Icon className="w-8 h-8 text-primary/20 group-hover:text-primary/40 transition-colors" />
           </div>
         </motion.div>
       ))}
@@ -625,5 +624,5 @@ export default function Dashboard() {
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }
