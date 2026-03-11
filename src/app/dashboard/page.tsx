@@ -589,7 +589,12 @@ export default function Dashboard() {
     fetchConferences();
   }, []);
 
-  const deleteConference = () => {};
+  const deleteConference = (conference: Conference) => {
+    axios.delete(`/api/conferences/${conference.id}`).then((res) => {
+      alert("Conference Deleted");
+      setConferences((prev) => prev.filter((c) => c.id !== conference.id));
+    });
+  };
   const setActiveConference = (conference: Conference) => {
     setActiveIdState(conference.id);
     setConferenceContext(conference);
@@ -623,7 +628,9 @@ export default function Dashboard() {
               conferences={conferences}
               activeId={activeId as string}
               setActiveConference={setActiveConference}
-              deleteConference={deleteConference}
+              deleteConference={() =>
+                deleteConference(conference as Conference)
+              }
             />
           )}
           <Button
