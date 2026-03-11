@@ -1,57 +1,157 @@
 "use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { motion, type Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { FileText, Copy } from "lucide-react";
+import { FileText, Copy, Upload, Globe, Lock, Search } from "lucide-react";
+import { useState } from "react";
+
+const container: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.08 } },
+};
+
+const item: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } },
+};
+
+const VAULT_ITEMS = [
+  { title: "Opening Statement — UNSC", type: "Position Paper", date: "Today", isPrivate: true },
+  { title: "Working Paper Alpha v2", type: "Draft Resolution", date: "Yesterday", isPrivate: true },
+];
+
+const REPO_ITEMS = [
+  {
+    title: "Cyber Warfare Framework (UK)",
+    type: "Position Paper",
+    author: "@delegateJohn",
+    date: "2 days ago",
+    downloads: 18,
+  },
+  {
+    title: "Resolution 1A — Autonomous Weapons Systems",
+    type: "Draft Resolution",
+    author: "@admin",
+    date: "1 week ago",
+    downloads: 41,
+  },
+  {
+    title: "UNSC Veto Reform Analysis (France)",
+    type: "Research Brief",
+    author: "@delegate_martine",
+    date: "3 days ago",
+    downloads: 27,
+  },
+];
 
 export default function Library() {
+  const [activeTab, setActiveTab] = useState<"vault" | "repository">("vault");
+
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-3xl font-playfair font-bold tracking-tight">Dual Library</h2>
-        <p className="text-muted-foreground">
-          Manage your personal vault or explore the global repository.
-        </p>
+    <div className="flex flex-col gap-8 pb-8">
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h2 className="text-4xl font-playfair font-bold tracking-tight text-foreground">Dual Library</h2>
+          <p className="text-muted-foreground text-lg">Your personal vault and the global delegate repository.</p>
+        </div>
+        <Button className="rounded-full px-6 bg-foreground text-background hover:bg-foreground/90 font-geist">
+          <Upload className="w-4 h-4 mr-2" />
+          Upload Document
+        </Button>
       </div>
-      
-      <Tabs defaultValue="vault" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
-          <TabsTrigger value="vault">My Vault</TabsTrigger>
-          <TabsTrigger value="repository">Global Repository</TabsTrigger>
-        </TabsList>
-        <TabsContent value="vault" className="mt-6 border rounded-xl p-8 bg-card flex flex-col items-center justify-center min-h-[400px] text-center">
-             <FileText className="w-12 h-12 text-muted-foreground mb-4 opacity-50" />
-             <h3 className="text-lg font-playfair font-semibold">Your Vault is Empty</h3>
-             <p className="text-muted-foreground max-w-sm mt-2">
-               Upload position papers, research docs, and drafts here to keep them safe.
-             </p>
-             <Button className="mt-6">Upload Document</Button>
-        </TabsContent>
-        <TabsContent value="repository" className="mt-6">
-          <div className="grid gap-4">
-             {/* Mock Item */}
-             <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-4 flex items-center justify-between">
-                <div>
-                   <h4 className="font-geist font-semibold">Cyber Warfare Framework (UK)</h4>
-                   <p className="text-sm text-muted-foreground mt-1">Uploaded by @delegateJohn • 2 days ago</p>
+
+      {/* Segmented Tab Control */}
+      <div className="flex bg-muted/30 p-1 rounded-full w-fit">
+        <button
+          onClick={() => setActiveTab("vault")}
+          className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${activeTab === "vault" ? "bg-background shadow-sm text-foreground border border-border/50" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          <Lock className="w-4 h-4" /> My Vault
+        </button>
+        <button
+          onClick={() => setActiveTab("repository")}
+          className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${activeTab === "repository" ? "bg-background shadow-sm text-foreground border border-border/50" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          <Globe className="w-4 h-4" /> Global Repository
+        </button>
+      </div>
+
+      {activeTab === "vault" && (
+        <motion.div variants={container} initial="hidden" animate="show">
+          {VAULT_ITEMS.length === 0 ? (
+            <motion.div variants={item} className="rounded-3xl border border-primary/10 bg-card shadow-sm p-16 flex flex-col items-center text-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <FileText className="w-8 h-8 text-primary/40" />
+              </div>
+              <h3 className="font-playfair text-xl font-semibold">Your Vault is Empty</h3>
+              <p className="text-muted-foreground max-w-xs text-sm">Upload position papers, research docs, and drafts here to keep them secure and accessible.</p>
+              <Button className="mt-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90">
+                <Upload className="w-4 h-4 mr-2" /> Upload First Document
+              </Button>
+            </motion.div>
+          ) : (
+            <motion.div variants={container} initial="hidden" animate="show" className="flex flex-col gap-4">
+              {VAULT_ITEMS.map((doc) => (
+                <motion.div key={doc.title} variants={item} className="rounded-3xl border border-primary/10 bg-card shadow-sm p-6 flex items-center gap-5 group hover:border-primary/30 transition-colors">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <FileText className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-foreground truncate">{doc.title}</p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-secondary text-secondary-foreground font-medium">{doc.type}</span>
+                      <span className="text-xs text-muted-foreground">{doc.date}</span>
+                      {doc.isPrivate && <span className="text-xs text-muted-foreground flex items-center gap-1"><Lock className="w-3 h-3" /> Private</span>}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button variant="outline" size="sm" className="rounded-full border-border">Open</Button>
+                    <Button variant="ghost" size="sm" className="rounded-full text-destructive hover:text-destructive hover:bg-destructive/10">Delete</Button>
+                  </div>
+                </motion.div>
+              ))}
+              <motion.div variants={item} className="rounded-3xl border-2 border-dashed border-border/50 p-8 flex flex-col items-center text-center gap-3 cursor-pointer hover:border-primary/30 transition-colors group">
+                <Upload className="w-6 h-6 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+                <p className="text-sm text-muted-foreground">Drop files here or click to upload</p>
+              </motion.div>
+            </motion.div>
+          )}
+        </motion.div>
+      )}
+
+      {activeTab === "repository" && (
+        <motion.div variants={container} initial="hidden" animate="show" className="flex flex-col gap-4">
+          {/* Search bar */}
+          <motion.div variants={item} className="relative max-w-md">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search global repository..."
+              className="w-full pl-11 pr-4 py-3 rounded-full border border-border bg-card text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </motion.div>
+
+          {REPO_ITEMS.map((doc) => (
+            <motion.div key={doc.title} variants={item} className="rounded-3xl border border-primary/10 bg-card shadow-sm p-6 flex items-center gap-5 group hover:border-primary/30 transition-colors">
+              <div className="w-12 h-12 rounded-2xl bg-muted/50 flex items-center justify-center shrink-0">
+                <FileText className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-foreground truncate">{doc.title}</p>
+                <div className="flex items-center gap-3 mt-1 flex-wrap">
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-secondary text-secondary-foreground font-medium">{doc.type}</span>
+                  <span className="text-xs text-muted-foreground">by {doc.author}</span>
+                  <span className="text-xs text-muted-foreground">{doc.date}</span>
+                  <span className="text-xs text-muted-foreground">{doc.downloads} clones</span>
                 </div>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Copy className="w-4 h-4" /> Clone to Vault
-                </Button>
-             </div>
-             {/* Mock Item */}
-             <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-4 flex items-center justify-between">
-                <div>
-                   <h4 className="font-geist font-semibold">Resolution 1A - Autonomous Systems</h4>
-                   <p className="text-sm text-muted-foreground mt-1">Uploaded by @admin • 1 week ago</p>
-                </div>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Copy className="w-4 h-4" /> Clone to Vault
-                </Button>
-             </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+              </div>
+              <Button variant="outline" size="sm" className="rounded-full border-primary/30 text-primary hover:bg-primary/10 hover:border-primary shrink-0">
+                <Copy className="w-4 h-4 mr-2" /> Clone
+              </Button>
+            </motion.div>
+          ))}
+        </motion.div>
+      )}
     </div>
-  )
+  );
 }

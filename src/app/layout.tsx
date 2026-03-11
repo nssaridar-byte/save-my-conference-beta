@@ -22,8 +22,8 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "MUN Command Center",
-  description: "Save My Conference - V1.0",
+  title: "Save My Conference | MUN Command Center",
+  description: "The AI-powered Model United Nations preparation and management suite.",
 };
 
 export default function RootLayout({
