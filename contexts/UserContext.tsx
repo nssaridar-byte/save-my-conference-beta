@@ -1,6 +1,6 @@
 "use client"
 import { User } from "@prisma/client";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 export interface TUserContext {
     user: User | null,
@@ -17,6 +17,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setUserState(user)
         sessionStorage.setItem("user", JSON.stringify(user))
     }
+
+    useEffect(() => {
+        const user = sessionStorage.getItem("user")
+        if (user) {
+            setUserState(JSON.parse(user))
+        }
+    }, [])
     return <UserContext.Provider value={{ user, setUser }}>
         {children}
     </UserContext.Provider>

@@ -19,12 +19,12 @@ import { persist } from "zustand/middleware";
 export interface Conference {
   id: string;
   name: string;
-  date: string;       // ISO date  "YYYY-MM-DD"
+  date: string; // ISO date  "YYYY-MM-DD"
   location: string;
   committee: string;
-  country: string;    // Country being represented
+  country: string; // Country being represented
   topic: string;
-  createdAt: string;  // ISO timestamp
+  createdAt: string; // ISO timestamp
 }
 
 export interface ConferenceStore {
@@ -39,14 +39,20 @@ export interface ConferenceStore {
   getActive: () => Conference | null;
 
   // ── Actions ──
-  addConference:    (data: Omit<Conference, "id" | "createdAt">) => void;
-  updateConference: (id: string, data: Partial<Omit<Conference, "id" | "createdAt">>) => void;
+  addConference: (data: Omit<Conference, "id" | "createdAt">) => void;
+  updateConference: (
+    id: string,
+    data: Partial<Omit<Conference, "id" | "createdAt">>,
+  ) => void;
   deleteConference: (id: string) => void;
-  setActiveId:      (id: string | null) => void;
+  setActiveId: (id: string | null) => void;
 
   // ── Backend-ready hooks ──
   /** Replace local list with data from GET /api/conferences */
-  setConferencesFromApi: (conferences: Conference[], activeId?: string | null) => void;
+  setConferencesFromApi: (
+    conferences: Conference[],
+    activeId?: string | null,
+  ) => void;
 }
 
 export const useConferenceStore = create<ConferenceStore>()(
@@ -76,7 +82,7 @@ export const useConferenceStore = create<ConferenceStore>()(
       updateConference: (id, data) =>
         set((state) => ({
           conferences: state.conferences.map((c) =>
-            c.id === id ? { ...c, ...data } : c
+            c.id === id ? { ...c, ...data } : c,
           ),
         })),
 
@@ -85,9 +91,7 @@ export const useConferenceStore = create<ConferenceStore>()(
           const remaining = state.conferences.filter((c) => c.id !== id);
           // If the deleted one was active, auto-select the first remaining
           const newActiveId =
-            state.activeId === id
-              ? (remaining[0]?.id ?? null)
-              : state.activeId;
+            state.activeId === id ? (remaining[0]?.id ?? null) : state.activeId;
           return { conferences: remaining, activeId: newActiveId };
         }),
 
@@ -98,6 +102,6 @@ export const useConferenceStore = create<ConferenceStore>()(
     }),
     {
       name: "smc-conferences",
-    }
-  )
+    },
+  ),
 );
