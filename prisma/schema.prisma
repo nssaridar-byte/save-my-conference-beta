@@ -1,6 +1,5 @@
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -14,62 +13,62 @@ enum Role {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  password      String?
-  role          Role      @default(FREE)
-  
-  subscription  Subscription?
-  usage         Usage?
-  speeches      Speech[]
-  files         File[]
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id       String  @id @default(cuid())
+  name     String
+  email    String? @unique
+  password String?
+  role     Role    @default(FREE)
+
+  subscription Subscription?
+  usage        Usage?
+  speeches     Speech[]
+  files        File[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Subscription {
-  id                   String   @id @default(cuid())
-  userId               String   @unique
-  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  stripeId             String?  @unique
-  status               String?  // active, past_due, canceled
-  currentPeriodEnd     DateTime?
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  stripeId         String?   @unique
+  status           String? // active, past_due, canceled
+  currentPeriodEnd DateTime?
 }
 
 model Usage {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  speechesCount Int      @default(0)
-  quizzesCount  Int      @default(0)
-  debatesCount  Int      @default(0)
-  crisisCount   Int      @default(0)
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  speechesCount Int @default(0)
+  quizzesCount  Int @default(0)
+  debatesCount  Int @default(0)
+  crisisCount   Int @default(0)
 }
 
 model Speech {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title       String
-  content     String
-  grade       String?  // A-F
-  feedback    String?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id       String  @id @default(cuid())
+  userId   String
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title    String
+  content  String
+  grade    String? // A-F
+  feedback String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model File {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name        String
-  url         String
-  isPublic    Boolean  @default(false)
-  
-  createdAt   DateTime @default(now())
+  id       String  @id @default(cuid())
+  userId   String
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name     String
+  url      String
+  isPublic Boolean @default(false)
+
+  createdAt DateTime @default(now())
 }
