@@ -6,13 +6,13 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 // Routes that should NOT show the sidebar (full-screen pages)
-const SIDEBAR_FREE_ROUTES = ["/login"];
+const SIDEBAR_FREE_PREFIXES = ["/login", "/pricing"];
 
 export function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isSidebarFree = SIDEBAR_FREE_ROUTES.some((route) =>
-    pathname.startsWith(route)
-  );
+  const isSidebarFree =
+    pathname === "/" ||
+    SIDEBAR_FREE_PREFIXES.some((route) => pathname.startsWith(route));
 
   if (isSidebarFree) {
     return <TooltipProvider>{children}</TooltipProvider>;
