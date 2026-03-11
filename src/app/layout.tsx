@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ConditionalLayout } from "@/components/conditional-layout";
 import { UserProvider } from "../../contexts/UserContext";
+import { ConferenceProvider } from "../../contexts/ConferenceContext";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -22,7 +23,8 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: "Save My Conference | MUN Command Center",
-  description: "The AI-powered Model United Nations preparation and management suite.",
+  description:
+    "The AI-powered Model United Nations preparation and management suite.",
 };
 
 export default function RootLayout({
@@ -31,22 +33,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <UserProvider>
-
-      <html lang="en" suppressHydrationWarning>
-        <body
-          className={`${inter.variable} ${geist.variable} ${playfair.variable} antialiased`}
-        >
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
+    <ConferenceProvider>
+      <UserProvider>
+        <html lang="en" suppressHydrationWarning>
+          <body
+            className={`${inter.variable} ${geist.variable} ${playfair.variable} antialiased`}
           >
-            <ConditionalLayout>{children}</ConditionalLayout>
-          </ThemeProvider>
-        </body>
-      </html>
-    </UserProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <ConditionalLayout>{children}</ConditionalLayout>
+            </ThemeProvider>
+          </body>
+        </html>
+      </UserProvider>
+    </ConferenceProvider>
   );
 }

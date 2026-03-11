@@ -18,7 +18,7 @@ import { persist } from "zustand/middleware";
 
 export interface Conference {
   id: string;
-  name: string;
+  title: string;
   date: string; // ISO date  "YYYY-MM-DD"
   location: string;
   committee: string;
