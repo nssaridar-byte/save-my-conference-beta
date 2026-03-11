@@ -6,6 +6,9 @@ import {
   MessageSquare,
   Newspaper,
   Settings,
+  BrainCircuit,
+  Swords,
+  ShieldAlert,
 } from "lucide-react";
 
 import {
@@ -34,9 +37,19 @@ const items = [
     icon: MessageSquare,
   },
   {
+    title: "Quiz Arena",
+    url: "/quiz-arena",
+    icon: BrainCircuit,
+  },
+  {
     title: "Crisis Simulator",
     url: "/crisis-simulator",
     icon: Newspaper,
+  },
+  {
+    title: "Debate Arena",
+    url: "/debate-arena",
+    icon: Swords,
   },
   {
     title: "Dual Library",
@@ -47,6 +60,11 @@ const items = [
     title: "Settings",
     url: "/settings",
     icon: Settings,
+  },
+  {
+    title: "Admin Panel",
+    url: "/admin",
+    icon: ShieldAlert,
   },
 ];
 
