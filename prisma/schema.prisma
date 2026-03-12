@@ -89,4 +89,5 @@ model Conference {
   country   String
   authorId  String
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  topic String
 }
