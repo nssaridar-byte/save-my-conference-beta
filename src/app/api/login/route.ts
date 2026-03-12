@@ -1,44 +1,48 @@
-import { prisma } from "@/lib/prisma"
-import { isEmpty } from "../isEmpty"
-import { compare } from "bcrypt"
-import { sign } from "jsonwebtoken"
-import { cookies } from "next/headers"
+import { prisma } from "@/lib/prisma";
+import { isEmpty } from "../isEmpty";
+import { compare } from "bcrypt";
+import { sign } from "jsonwebtoken";
+import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
-    try {
-        const { email, password } = await req.json()
+  try {
+    const { email, password } = await req.json();
 
-        if (!email || !password || isEmpty([email, password])) return new Response("Please fill all fields", { status: 400 })
+    if (!email || !password || isEmpty([email, password]))
+      return new Response("Please fill all fields", { status: 400 });
 
-        const user = await prisma.user.findUnique({
-            where: {
-                email
-            },
-            include: {
-                files: true,
-                speeches: true,
-                subscription: true,
-                usage: true,
-                conferences: true
-            }
-        })
+    const user = await prisma.user.findUnique({
+      where: {
+        email,
+      },
+      include: {
+        files: true,
+        speeches: true,
+        subscription: true,
+        usage: true,
+        conferences: true,
+      },
+    });
 
-        if (!user) return new Response("User not found", { status: 404 })
+    if (!user) return new Response("User not found", { status: 404 });
 
-        const passValid = await compare(password, user.password as string)
+    const passValid = await compare(password, user.password as string);
 
-        if (!passValid) return new Response("Incorrect Password", { status: 400 })
+    if (!passValid) return new Response("Incorrect Password", { status: 400 });
 
-        const token = sign({ id: user.id }, process.env.JWT_SECRET as string)
+    const token = sign(
+      { id: user.id, user, name: user.name },
+      process.env.JWT_SECRET as string,
+    );
 
-        const cookieStore = await cookies()
+    const cookieStore = await cookies();
 
-        cookieStore.set("token", token, {
-            secure: true,
-            path: "/"
-        })
-        return Response.json({ user })
-    } catch (error: any) {
-        return new Response(error, { status: 500 })
-    }
+    cookieStore.set("token", token, {
+      secure: true,
+      path: "/",
+    });
+    return Response.json({ user });
+  } catch (error: any) {
+    return new Response(error, { status: 500 });
+  }
 }

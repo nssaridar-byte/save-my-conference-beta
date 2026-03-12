@@ -51,7 +51,8 @@ export async function POST(req: Request) {
         status: "Inactive",
       },
     });
-    const { title, date, location, committee, country } = await req.json();
+    const { title, date, location, committee, country, topic } =
+      await req.json();
 
     if (
       !title ||
@@ -59,7 +60,8 @@ export async function POST(req: Request) {
       !location ||
       !committee ||
       !country ||
-      isEmpty([title, date, location, committee, country])
+      !topic ||
+      isEmpty([title, date, location, committee, country, topic])
     )
       return new Response("Please fill all fields", { status: 400 });
 
@@ -72,6 +74,7 @@ export async function POST(req: Request) {
         country,
         status: "Active",
         authorId: decoded.id,
+        topic,
       },
     });
 
