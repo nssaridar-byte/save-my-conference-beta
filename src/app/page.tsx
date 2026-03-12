@@ -295,19 +295,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Footer ── */}
-      <footer className="border-t border-border px-6 md:px-16 py-10 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-playfair font-bold text-sm">M</div>
-          <span className="font-playfair font-semibold text-foreground">Save My Conference</span>
-        </div>
-        <p>© {new Date().getFullYear()} Save My Conference. All rights reserved.</p>
-        <div className="flex gap-6">
-          <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
-          <Link href="/login" className="hover:text-foreground transition-colors">Sign In</Link>
-          <Link href="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link>
-        </div>
-      </footer>
     </div>
   );
 }
