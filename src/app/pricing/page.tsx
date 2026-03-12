@@ -192,8 +192,7 @@ export default function PricingPage() {
               <Button
                 className="w-full py-6 rounded-full bg-primary text-primary-foreground font-geist font-semibold text-sm hover:bg-primary/90 shadow-md"
                 onClick={() => {
-                  // Stripe checkout would be wired here
-                  alert("Stripe checkout coming soon!");
+                  router.push(`/checkout?billing=${billing}`);
                 }}
               >
                 <Crown className="w-4 h-4 mr-2" />
