@@ -5,8 +5,9 @@ import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sun, Moon, Check, Zap, Crown, Shield, BookOpen, MessageSquare, LogOut } from "lucide-react";
+import { Sun, Moon, Check, Zap, Crown, Shield, BookOpen, MessageSquare, LogOut, Info, Monitor, Smartphone } from "lucide-react";
 import { useUsageStore, FREE_DAILY_LIMITS } from "@/hooks/use-usage";
+import { useLayoutSettings } from "@/hooks/use-layout-settings";
 
 const container: Variants = {
   hidden: { opacity: 0 },
@@ -21,7 +22,7 @@ const item: Variants = {
 const USAGE_ITEMS = [
   { key: "speeches" as const, label: "Speeches / Analysis", icon: MessageSquare },
   { key: "quizzes" as const, label: "Quiz Arena sessions", icon: BookOpen },
-  { key: "debates" as const, label: "Debate simulations", icon: Shield },
+  { key: "debates" as const, "label": "Debate simulations", icon: Shield },
   { key: "crisis" as const, label: "Crisis Simulator runs", icon: Zap },
 ];
 
@@ -29,6 +30,7 @@ export default function Settings() {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const { usage, isProUser, getRemainingToday } = useUsageStore();
+  const { layoutMode, setLayoutMode } = useLayoutSettings();
 
   return (
     <div className="flex flex-col gap-8 pb-8">
@@ -110,6 +112,65 @@ export default function Settings() {
                 </div>
               </button>
             </div>
+          </div>
+        </motion.div>
+ 
+        {/* ── Device Optimization ── */}
+        <motion.div variants={item} className="rounded-3xl border border-primary/10 bg-card shadow-sm overflow-hidden">
+          <div className="px-8 py-6 border-b border-border/50">
+            <h3 className="font-geist font-semibold text-xl text-foreground">Device Optimization</h3>
+            <p className="text-muted-foreground text-sm mt-1">Adjust how the interface fits on your screen.</p>
+          </div>
+          <div className="p-8 flex flex-col gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => setLayoutMode("adaptive")}
+                className={`relative flex flex-col gap-3 p-5 rounded-2xl border-2 transition-all text-left group ${
+                  layoutMode === "adaptive"
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-muted/20 hover:border-primary/40"
+                }`}
+              >
+                {layoutMode === "adaptive" && (
+                  <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                    <Check className="w-3 h-3 text-primary-foreground" />
+                  </div>
+                )}
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                  <Monitor className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-sm">Adaptive Mode</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Recommended for tablets & laptops.</p>
+                </div>
+              </button>
+ 
+              <button
+                onClick={() => setLayoutMode("mobile-optimized")}
+                className={`relative flex flex-col gap-3 p-5 rounded-2xl border-2 transition-all text-left group ${
+                  layoutMode === "mobile-optimized"
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-muted/20 hover:border-primary/40"
+                }`}
+              >
+                {layoutMode === "mobile-optimized" && (
+                  <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                    <Check className="w-3 h-3 text-primary-foreground" />
+                  </div>
+                )}
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                  <Smartphone className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-sm">Phone Mode</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Compacted layout for small screens.</p>
+                </div>
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground flex items-center gap-2 mt-2">
+              <Info className="w-3.5 h-3.5" />
+              This forces a "tight" fit regardless of screen size.
+            </p>
           </div>
         </motion.div>
 
