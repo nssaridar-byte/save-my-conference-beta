@@ -29,7 +29,7 @@ const fadeUp: Variants = {
 };
 
 const FREE_FEATURES = [
-  { icon: MessageSquare, text: "5 speeches & AI analysis per day" },
+  { icon: MessageSquare, text: "3 speeches & AI analysis per day" },
   { icon: BookOpen, text: "5 quiz sessions per day" },
   { icon: Swords, text: "1 debate simulation per day" },
   { icon: Zap, text: "1 crisis simulation per day" },
@@ -49,7 +49,7 @@ const PRO_FEATURES = [
 ];
 
 const COMPARISON = [
-  { feature: "Speeches & AI Feedback", free: "5 / day", pro: "Unlimited" },
+  { feature: "Speeches & AI Feedback", free: "3 / day", pro: "Unlimited" },
   { feature: "Quiz Arena Sessions", free: "5 / day", pro: "Unlimited" },
   { feature: "Debate Simulations", free: "1 / day", pro: "Unlimited" },
   { feature: "AI Rebuttal Engine", free: false, pro: true },

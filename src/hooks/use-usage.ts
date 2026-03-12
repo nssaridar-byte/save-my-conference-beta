@@ -7,9 +7,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export const FREE_DAILY_LIMITS = {
-  speeches: 2,
-  quizzes: 3,
-  crisis: 2,
+  speeches: 3,
+  quizzes: 5,
+  crisis: 1,
   debates: 1,
 } as const;
 
