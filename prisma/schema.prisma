@@ -58,7 +58,10 @@ model Speech {
   content  String
   grade    String? // A-F
   feedback String?
-
+  conferenceId String
+  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  time Int?
+  topic String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -90,4 +93,5 @@ model Conference {
   authorId  String
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   topic String
+  speeches Speech[]
 }

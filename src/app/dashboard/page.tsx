@@ -279,16 +279,19 @@ function ConferenceModal({
 function ConferenceSwitcher({
   conferences,
   activeId,
+  setActiveIdState,
   setActiveConference,
   setConferences,
 }: {
   conferences: Conference[];
   activeId: string;
   setActiveConference: (conference: Conference) => void;
+  setActiveIdState: Dispatch<SetStateAction<string>>;
   setConferences: Dispatch<SetStateAction<Conference[]>>;
 }) {
   const active = conferences.find((c) => c.id === activeId);
   const [open, setOpen] = useState(false);
+  const { setConferenceContext } = UseConference();
   const deleteConference = (deletedConference: Conference) => {
     axios.delete(`/api/conferences/${deletedConference.id}`).then((res) => {
       const newConferences = conferences.filter(
@@ -296,6 +299,10 @@ function ConferenceSwitcher({
       );
       setConferences(newConferences);
       sessionStorage.setItem("conference", JSON.stringify(newConferences));
+      if (activeId === deletedConference.id) {
+        setConferenceContext(null);
+        setActiveIdState("");
+      }
     });
   };
   return (
@@ -553,7 +560,7 @@ function ActiveDashboard({
       </motion.div>
 
       {/* Stat tiles */}
-      {[
+      {/* {[
         { label: "Speech Quality", value: "—", icon: Trophy },
         { label: "Quiz Performance", value: "—", icon: Target },
         {
@@ -573,7 +580,7 @@ function ActiveDashboard({
             <Icon className="w-8 h-8 text-primary/20 group-hover:text-primary/40 transition-colors" />
           </div>
         </motion.div>
-      ))}
+      ))} */}
     </motion.div>
   );
 }
@@ -665,6 +672,7 @@ export default function Dashboard() {
               activeId={activeId as string}
               setConferences={setConferences}
               setActiveConference={setActiveConference}
+              setActiveIdState={setActiveIdState}
             />
           )}
           <Button
