@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Footer } from "@/components/footer";
 
 import { useLayoutSettings } from "@/hooks/use-layout-settings";
  
@@ -19,7 +20,16 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
     SIDEBAR_FREE_PREFIXES.some((route) => pathname.startsWith(route));
 
   if (isSidebarFree) {
-    return <TooltipProvider>{children}</TooltipProvider>;
+    return (
+      <TooltipProvider>
+        <div className="flex flex-col min-h-screen">
+          <main className="flex-1">
+            {children}
+          </main>
+          <Footer />
+        </div>
+      </TooltipProvider>
+    );
   }
 
   return (
@@ -38,7 +48,10 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
               ? "gap-2 p-3 md:gap-4 md:p-4" 
               : "gap-4 p-4 md:gap-8 md:p-8"
           }`}>
-            {children}
+            <div className="flex-1">
+              {children}
+            </div>
+            <Footer />
           </div>
         </SidebarInset>
         </SidebarProvider>
