@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
   FileText,
@@ -18,8 +18,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useConferenceStore, type Conference } from "@/hooks/use-conference";
+import { type Conference } from "@/hooks/use-conference";
 import axios from "axios";
+import { UseConference } from "../../../contexts/ConferenceContext";
 
 /* ── Animations ── */
 const container: Variants = {
@@ -68,13 +69,15 @@ function ConferenceModal({
   initial,
   onSave,
   onClose,
+  setConferences,
 }: {
   initial?: Partial<Conference>;
   onSave: (data: Omit<Conference, "id" | "createdAt">) => void;
   onClose: () => void;
+  setConferences: Dispatch<SetStateAction<Conference[]>>;
 }) {
   const [form, setForm] = useState({
-    name: initial?.name ?? "",
+    title: initial?.title ?? "",
     date: initial?.date ?? "",
     location: initial?.location ?? "",
     committee: initial?.committee ?? "",
@@ -84,19 +87,11 @@ function ConferenceModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.committee || !form.country) return;
+    if (!form.title || !form.committee || !form.country) return;
     onClose();
-    console.log({
-      name: form.name,
-      date: form.date,
-      location: form.location,
-      committee: form.committee,
-      country: form.country,
-      topic: form.topic,
-    });
     axios
       .post("/api/conferences", {
-        title: form.name,
+        title: form.title,
         date: form.date,
         location: form.location,
         committee: form.committee,
@@ -104,8 +99,8 @@ function ConferenceModal({
       })
       .then((res) => {
         alert("Added");
+        setConferences((prev: any) => [...prev, res.data.conference]);
         onSave(form);
-        onClose();
       })
       .catch((err) => {
         alert(err.response.data || err.message);
@@ -152,9 +147,9 @@ function ConferenceModal({
               </label>
               <Input
                 placeholder="e.g. Global MUN Summit 2026"
-                value={form.name}
+                value={form.title}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, name: e.target.value }))
+                  setForm((f) => ({ ...f, title: e.target.value }))
                 }
                 className="rounded-2xl border-border h-11"
                 required
@@ -251,9 +246,17 @@ function ConferenceModal({
 /* ═══════════════════════════════════════════════
    Conference Switcher Dropdown
 ═══════════════════════════════════════════════ */
-function ConferenceSwitcher() {
-  const { conferences, activeId, setActiveId, deleteConference } =
-    useConferenceStore();
+function ConferenceSwitcher({
+  conferences,
+  activeId,
+  setActiveConference,
+  deleteConference,
+}: {
+  conferences: Conference[];
+  activeId: string;
+  setActiveConference: (conference: Conference) => void;
+  deleteConference: (id: string) => void;
+}) {
   const active = conferences.find((c) => c.id === activeId);
   const [open, setOpen] = useState(false);
 
@@ -264,7 +267,7 @@ function ConferenceSwitcher() {
         className="flex items-center gap-2 px-4 py-2.5 rounded-full border border-border bg-card hover:bg-muted/30 transition-colors text-sm font-semibold"
       >
         <span className="max-w-[180px] truncate">
-          {active?.name ?? "Select conference"}
+          {active?.title ?? "Select conference"}
         </span>
         <ChevronDown
           className={`w-4 h-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
@@ -287,18 +290,16 @@ function ConferenceSwitcher() {
                   className={`flex items-center gap-2 rounded-xl px-3 py-2.5 group transition-colors cursor-pointer ${
                     c.id === activeId ? "bg-primary/10" : "hover:bg-muted/40"
                   }`}
+                  onClick={() => {
+                    setActiveConference(c);
+                    setOpen(false);
+                  }}
                 >
-                  <div
-                    className="flex-1 min-w-0"
-                    onClick={() => {
-                      setActiveId(c.id);
-                      setOpen(false);
-                    }}
-                  >
+                  <div className="flex-1 min-w-0">
                     <p
                       className={`text-sm font-medium truncate ${c.id === activeId ? "text-primary" : "text-foreground"}`}
                     >
-                      {c.name}
+                      {c.title}
                     </p>
                     {c.committee && (
                       <p className="text-xs text-muted-foreground truncate">
@@ -417,7 +418,7 @@ function ActiveDashboard({
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
               <h3 className="font-geist font-semibold text-2xl">
-                {conference.name}
+                {conference.title}
               </h3>
               <p className="text-primary font-medium mt-0.5">
                 Active assignment
@@ -467,20 +468,8 @@ function ActiveDashboard({
               </div>
             ))}
           </div>
-
-          <div className="mt-8 bg-background/50 rounded-2xl p-6 border border-border/50">
-              <div className="flex items-center gap-2 mb-2">
-                <FileText className="w-4 h-4 text-primary" />
-                <span className="font-semibold text-sm">Topic</span>
-              </div>
-              <p className="text-foreground text-lg">Cybersecurity Threats to International Peace</p>
-            </div>
-          </form>
-        </motion.div>
-      </AnimatePresence>
-    </div>
-  );
-}
+        </div>
+      </motion.div>
 
       {/* Preparation card */}
       <motion.div
@@ -555,30 +544,69 @@ function ActiveDashboard({
    Page
 ═══════════════════════════════════════════════ */
 export default function Dashboard() {
-  const { conferences, activeId, getActive, addConference, updateConference } =
-    useConferenceStore();
-  const active = getActive();
-
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Conference | null>(null);
-
+  const [conferences, setConferences] = useState<Conference[]>([]);
+  const [activeId, setActiveIdState] = useState<string>("");
+  const { conference, setConferenceContext } = UseConference();
   const openCreate = () => {
     setEditing(null);
     setShowModal(true);
   };
+
   const openEdit = () => {
-    setEditing(active);
+    setEditing(conference);
     setShowModal(true);
   };
 
-  const handleSave = (data: Omit<Conference, "id" | "createdAt">) => {
-    if (editing) {
-      updateConference(editing.id, data);
-    } else {
-      addConference(data);
-    }
+  const handleSave = () => {};
+  const fetchConference = async () => {
+    await axios
+      .get("/api/conferences/active")
+      .then((res) => {
+        console.log(res.data);
+        setConferenceContext(res.data.conference);
+        setActiveIdState(res.data.conference.id);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   };
+  const fetchConferences = async () => {
+    await axios
+      .get("/api/conferences")
+      .then((res) => {
+        console.log("conferences: ", res.data.conferences);
 
+        setConferences(res.data.conferences);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+  useEffect(() => {
+    fetchConference();
+    fetchConferences();
+  }, []);
+
+  const deleteConference = (conference: Conference) => {
+    axios.delete(`/api/conferences/${conference.id}`).then((res) => {
+      alert("Conference Deleted");
+      setConferences((prev) => prev.filter((c) => c.id !== conference.id));
+    });
+  };
+  const setActiveConference = (conference: Conference) => {
+    setActiveIdState(conference.id);
+    setConferenceContext(conference);
+    axios
+      .post(`/api/conferences/active/${conference.id}`, {})
+      .then((res) => {})
+      .catch((err) => {
+        console.log(err);
+        setActiveIdState("");
+        setConferenceContext(null);
+      });
+  };
   return (
     <div className="flex flex-col gap-8 pb-8">
       {/* Header */}
@@ -588,14 +616,23 @@ export default function Dashboard() {
             Dashboard
           </h2>
           <p className="text-muted-foreground text-lg mt-1">
-            {active
-              ? `Preparing for ${active.committee} · ${active.country}`
+            {conference
+              ? `Preparing for ${conference.committee} · ${conference.country}`
               : "Set up your first conference to get started."}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          {conferences.length > 0 && <ConferenceSwitcher />}
+          {conferences.length > 0 && (
+            <ConferenceSwitcher
+              conferences={conferences}
+              activeId={activeId as string}
+              setActiveConference={setActiveConference}
+              deleteConference={() =>
+                deleteConference(conference as Conference)
+              }
+            />
+          )}
           <Button
             onClick={openCreate}
             variant="outline"
@@ -607,8 +644,11 @@ export default function Dashboard() {
       </div>
 
       {/* Body */}
-      {active ? (
-        <ActiveDashboard conference={active} onEdit={openEdit} />
+      {conference ? (
+        <ActiveDashboard
+          conference={conference as Conference}
+          onEdit={openEdit}
+        />
       ) : (
         <EmptyState onAdd={openCreate} />
       )}
@@ -620,6 +660,7 @@ export default function Dashboard() {
             initial={editing ?? undefined}
             onSave={handleSave}
             onClose={() => setShowModal(false)}
+            setConferences={setConferences}
           />
         )}
       </AnimatePresence>
