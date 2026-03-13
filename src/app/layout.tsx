@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ConditionalLayout } from "@/components/conditional-layout";
 import { UserProvider } from "../../contexts/UserContext";
 import { ConferenceProvider } from "../../contexts/ConferenceContext";
+import { CookieConsent } from "@/components/cookie-consent";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -46,6 +47,7 @@ export default function RootLayout({
               disableTransitionOnChange
             >
               <ConditionalLayout>{children}</ConditionalLayout>
+              <CookieConsent />
             </ThemeProvider>
           </body>
         </html>
