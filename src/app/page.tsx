@@ -228,7 +228,7 @@ export default function LandingPage() {
                 <div className="font-playfair text-4xl font-black">$0<span className="text-lg font-medium text-muted-foreground">/mo</span></div>
               </div>
               <ul className="flex flex-col gap-2.5 flex-1">
-                {["5 speeches per day", "5 quizzes per day", "1 debate simulation / day", "1 crisis simulation / day", "Dual Library access"].map(f => (
+                {["3 speeches per day", "5 quizzes per day", "1 debate simulation / day", "1 crisis simulation / day", "Dual Library access"].map(f => (
                   <li key={f} className="flex items-center gap-3 text-sm text-muted-foreground">
                     <Check className="w-4 h-4 text-muted-foreground shrink-0" /> {f}
                   </li>
