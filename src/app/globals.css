@@ -133,3 +133,28 @@
     @apply font-sans;
   }
 }
+
+/* === Layout Optimizations === */
+[data-layout-mode="mobile-optimized"] {
+  font-size: 14px; /* Slightly smaller base font */
+}
+
+[data-layout-mode="mobile-optimized"] h1,
+[data-layout-mode="mobile-optimized"] .text-4xl,
+[data-layout-mode="mobile-optimized"] .text-5xl,
+[data-layout-mode="mobile-optimized"] .text-6xl {
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+[data-layout-mode="mobile-optimized"] .rounded-3xl {
+  border-radius: 1.25rem; /* Tighter corners for tighter screens */
+}
+
+[data-layout-mode="mobile-optimized"] .p-8 {
+  padding: 1.25rem !important; /* Force smaller padding on forced mobile mode */
+}
+
+[data-layout-mode="mobile-optimized"] .gap-8 {
+  gap: 1.5rem !important;
+}

@@ -29,7 +29,7 @@ const fadeUp: Variants = {
 };
 
 const FREE_FEATURES = [
-  { icon: MessageSquare, text: "5 speeches & AI analysis per day" },
+  { icon: MessageSquare, text: "3 speeches & AI analysis per day" },
   { icon: BookOpen, text: "5 quiz sessions per day" },
   { icon: Swords, text: "1 debate simulation per day" },
   { icon: Zap, text: "1 crisis simulation per day" },
@@ -49,7 +49,7 @@ const PRO_FEATURES = [
 ];
 
 const COMPARISON = [
-  { feature: "Speeches & AI Feedback", free: "5 / day", pro: "Unlimited" },
+  { feature: "Speeches & AI Feedback", free: "3 / day", pro: "Unlimited" },
   { feature: "Quiz Arena Sessions", free: "5 / day", pro: "Unlimited" },
   { feature: "Debate Simulations", free: "1 / day", pro: "Unlimited" },
   { feature: "AI Rebuttal Engine", free: false, pro: true },
@@ -272,19 +272,6 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* ── Footer ── */}
-      <footer className="border-t border-border px-6 md:px-16 py-10 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-playfair font-bold text-sm">M</div>
-          <span className="font-playfair font-semibold text-foreground">Save My Conference</span>
-        </div>
-        <p>© {new Date().getFullYear()} Save My Conference. All rights reserved.</p>
-        <div className="flex gap-6">
-          <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
-          <Link href="/login" className="hover:text-foreground transition-colors">Sign In</Link>
-          <Link href="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link>
-        </div>
-      </footer>
     </div>
   );
 }

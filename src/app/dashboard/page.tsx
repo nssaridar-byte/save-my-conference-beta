@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { type Conference } from "@/hooks/use-conference";
 import axios from "axios";
 import { UseConference } from "../../../contexts/ConferenceContext";
+import { RoadmapPanel } from "@/components/roadmap-panel";
 
 /* ── Animations ── */
 const container: Variants = {
@@ -516,47 +517,9 @@ function ActiveDashboard({
         </div>
       </motion.div>
 
-      {/* Preparation card */}
-      <motion.div
-        variants={item}
-        className="rounded-3xl border border-primary/10 bg-card shadow-sm p-8 flex flex-col justify-between"
-      >
-        <div>
-          <h3 className="font-geist font-semibold text-xl mb-2">Preparation</h3>
-          <p className="text-muted-foreground text-sm">
-            Use the modules to track your prep for{" "}
-            <span className="font-medium text-foreground">
-              {conference.country}
-            </span>{" "}
-            in{" "}
-            <span className="font-medium text-foreground">
-              {conference.committee}
-            </span>
-            .
-          </p>
-          {/* Progress bars — real data comes from backend */}
-          <div className="mt-6 flex flex-col gap-4">
-            {["Speeches drafted", "Crisis directives", "Quiz sessions"].map(
-              (label) => (
-                <div key={label} className="flex flex-col gap-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      {label}
-                    </span>
-                    <span className="text-xs text-muted-foreground">—</span>
-                  </div>
-                  <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                    <div className="h-full bg-primary/25 w-0 rounded-full" />
-                  </div>
-                </div>
-              ),
-            )}
-          </div>
-        </div>
-        <Button className="w-full mt-8 rounded-full py-6 group">
-          Start Preparing
-          <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-        </Button>
+      {/* ── Progress & Training Roadmap ── */}
+      <motion.div variants={item} className="md:col-span-3">
+        <RoadmapPanel />
       </motion.div>
 
       {/* Stat tiles */}
