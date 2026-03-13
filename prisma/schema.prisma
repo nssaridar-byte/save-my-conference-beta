@@ -43,7 +43,10 @@ model Usage {
   id     String @id @default(cuid())
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  speechesLimitHitAt DateTime?
+  quizzesLimitHitAt DateTime?
+  debatesLimitHitAt DateTime?
+  crisisLimitHitAt DateTime?
   speechesCount Int @default(0)
   quizzesCount  Int @default(0)
   debatesCount  Int @default(0)
@@ -57,7 +60,7 @@ model Speech {
   title    String
   content  String
   grade    String? // A-F
-  feedback String?
+  feedback Json?
   conferenceId String
   conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   time Int?

@@ -26,6 +26,13 @@ export async function POST(req: Request) {
         password: await hash(password, 10),
         name,
       },
+      include: {
+        conferences: true,
+        files: true,
+        speeches: true,
+        subscription: true,
+        usage: true,
+      },
     });
 
     const token = await sign(
