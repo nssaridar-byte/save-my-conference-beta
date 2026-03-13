@@ -5,6 +5,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/s
 import { AppSidebar } from "@/components/app-sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Footer } from "@/components/footer";
+import { GlobalConferenceSwitcher } from "@/components/conference-switcher";
 
 import { useLayoutSettings } from "@/hooks/use-layout-settings";
  
@@ -38,10 +39,13 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
         <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-            <SidebarTrigger className="-ml-1" />
-            <div className="mr-2 h-4 w-px bg-border" />
-            <h1 className="font-playfair font-semibold text-lg">Save My Conference</h1>
+          <header className="flex h-16 shrink-0 items-center justify-between border-b px-4 sticky top-0 bg-background z-20">
+            <div className="flex items-center gap-2">
+              <SidebarTrigger className="-ml-1" />
+              <div className="mr-2 h-4 w-px bg-border" />
+              <h1 className="font-playfair font-semibold text-lg truncate min-w-0">Save My Conference</h1>
+            </div>
+            <GlobalConferenceSwitcher />
           </header>
           <div className={`flex flex-1 flex-col transition-all duration-300 ${
             layoutMode === "mobile-optimized" 
