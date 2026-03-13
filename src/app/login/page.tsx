@@ -20,7 +20,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [error, setError] = useState("")
+  const [error, setError] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const { setUser } = UseUser()
   const router = useRouter()
   return (
@@ -163,9 +164,30 @@ export default function LoginPage() {
               </div>
             )}
 
+            <div className="flex items-start gap-3 px-1 mt-1">
+              <div className="flex items-center h-5">
+                <input
+                  id="terms"
+                  name="terms"
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary/50 bg-card cursor-pointer transition-all"
+                />
+              </div>
+              <label htmlFor="terms" className="text-xs text-muted-foreground leading-normal cursor-pointer select-none">
+                I agree to the <Link href="/terms" className="text-primary hover:underline font-medium">Terms of Service</Link> and <Link href="/privacy" className="text-primary hover:underline font-medium">Privacy Policy</Link>.
+              </label>
+            </div>
+
             <Button
               type="submit"
-              className="w-full py-6 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-geist font-semibold tracking-wide text-base mt-2"
+              disabled={!acceptedTerms}
+              className={`w-full py-6 rounded-full font-geist font-semibold tracking-wide text-base mt-2 transition-all duration-300 ${
+                acceptedTerms 
+                  ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20" 
+                  : "bg-muted text-muted-foreground cursor-not-allowed opacity-70"
+              }`}
             >
               {mode === "login" ? "Access Command Center" : "Begin Mission"}
             </Button>
