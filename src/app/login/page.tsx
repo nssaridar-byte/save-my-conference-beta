@@ -8,6 +8,7 @@ import Link from "next/link";
 import { UseUser } from "../../../contexts/UserContext";
 import Error from "@/components/Error";
 import { useRouter } from "next/navigation";
+import { Captcha } from "@/components/captcha";
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 24 },
@@ -22,6 +23,7 @@ export default function LoginPage() {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
   const { setUser } = UseUser()
   const router = useRouter()
   return (
@@ -180,11 +182,15 @@ export default function LoginPage() {
               </label>
             </div>
 
+            <div className="py-2">
+              <Captcha onVerify={setIsVerified} />
+            </div>
+
             <Button
               type="submit"
-              disabled={!acceptedTerms}
+              disabled={!acceptedTerms || !isVerified}
               className={`w-full py-6 rounded-full font-geist font-semibold tracking-wide text-base mt-2 transition-all duration-300 ${
-                acceptedTerms 
+                acceptedTerms && isVerified
                   ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20" 
                   : "bg-muted text-muted-foreground cursor-not-allowed opacity-70"
               }`}
