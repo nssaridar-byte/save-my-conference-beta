@@ -85,6 +85,8 @@ function LogoutButton() {
   );
 }
 
+import { Logo } from "@/components/logo";
+
 export function AppSidebar() {
   const pathname = usePathname();
   return (
@@ -92,17 +94,7 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <div className="flex items-center gap-2 px-2 py-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <span className="font-playfair font-bold text-lg">M</span>
-            </div>
-            <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-              <span className="font-playfair font-semibold text-sm leading-tight text-foreground tracking-wide">
-                COMMAND
-              </span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
-                Center
-              </span>
-            </div>
+            <Logo size="sm" showText />
           </div>
           <SidebarGroupLabel className="font-geist">Modules</SidebarGroupLabel>
           <SidebarGroupContent>
