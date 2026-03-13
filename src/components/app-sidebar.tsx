@@ -10,6 +10,7 @@ import {
   Swords,
   ShieldAlert,
   LogOut,
+  Mail,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -130,6 +131,18 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip="Support"
+              asChild
+              className="hover:bg-primary/10 transition-colors"
+            >
+              <a href="mailto:savemyconference@gmail.com">
+                <Mail className="w-4 h-4" />
+                <span className="font-geist font-medium tracking-wide">Support</span>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <LogoutButton />
           </SidebarMenuItem>

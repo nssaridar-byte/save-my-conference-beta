@@ -47,6 +47,18 @@ export default function LoginPage() {
             "Diplomacy is the art of letting someone have your way."
           </blockquote>
           <p className="text-white/50 font-geist text-sm">— Daniele Vare, Italian Diplomat</p>
+          
+          {/* Support Note */}
+          <div className="mt-8 pt-8 border-t border-white/10 w-full">
+            <p className="text-white/40 text-[10px] uppercase tracking-widest mb-2 font-geist">Technical Support</p>
+            <a 
+              href="mailto:savemyconference@gmail.com" 
+              className="text-white/70 hover:text-white transition-colors font-medium text-sm flex items-center justify-center gap-2"
+            >
+              <Mail className="w-4 h-4" />
+              savemyconference@gmail.com
+            </a>
+          </div>
         </div>
       </div>
 
