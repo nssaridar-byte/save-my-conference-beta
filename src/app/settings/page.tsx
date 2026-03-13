@@ -5,7 +5,20 @@ import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sun, Moon, Check, Zap, Crown, Shield, BookOpen, MessageSquare, LogOut, Info, Monitor, Smartphone } from "lucide-react";
+import {
+  Sun,
+  Moon,
+  Check,
+  Zap,
+  Crown,
+  Shield,
+  BookOpen,
+  MessageSquare,
+  LogOut,
+  Info,
+  Monitor,
+  Smartphone,
+} from "lucide-react";
 import { useUsageStore, FREE_DAILY_LIMITS } from "@/hooks/use-usage";
 import { useLayoutSettings } from "@/hooks/use-layout-settings";
 
@@ -16,13 +29,21 @@ const container: Variants = {
 
 const item: Variants = {
   hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 300, damping: 24 },
+  },
 };
 
 const USAGE_ITEMS = [
-  { key: "speeches" as const, label: "Speeches / Analysis", icon: MessageSquare },
+  {
+    key: "speeches" as const,
+    label: "Speeches / Analysis",
+    icon: MessageSquare,
+  },
   { key: "quizzes" as const, label: "Quiz Arena sessions", icon: BookOpen },
-  { key: "debates" as const, "label": "Debate simulations", icon: Shield },
+  { key: "debates" as const, label: "Debate simulations", icon: Shield },
   { key: "crisis" as const, label: "Crisis Simulator runs", icon: Zap },
 ];
 
@@ -36,17 +57,32 @@ export default function Settings() {
     <div className="flex flex-col gap-8 pb-8">
       {/* Header */}
       <div>
-        <h2 className="text-4xl font-playfair font-bold tracking-tight text-foreground">Settings</h2>
-        <p className="text-muted-foreground text-lg">Manage your account, appearance, and subscription.</p>
+        <h2 className="text-4xl font-playfair font-bold tracking-tight text-foreground">
+          Settings
+        </h2>
+        <p className="text-muted-foreground text-lg">
+          Manage your account, appearance, and subscription.
+        </p>
       </div>
 
-      <motion.div variants={container} initial="hidden" animate="show" className="flex flex-col gap-6 max-w-3xl">
-
+      <motion.div
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="flex flex-col gap-6 max-w-3xl"
+      >
         {/* ── Appearance ── */}
-        <motion.div variants={item} className="rounded-3xl border border-primary/10 bg-card shadow-sm overflow-hidden">
+        <motion.div
+          variants={item}
+          className="rounded-3xl border border-primary/10 bg-card shadow-sm overflow-hidden"
+        >
           <div className="px-8 py-6 border-b border-border/50">
-            <h3 className="font-geist font-semibold text-xl text-foreground">Appearance</h3>
-            <p className="text-muted-foreground text-sm mt-1">Choose your Command Center's visual identity.</p>
+            <h3 className="font-geist font-semibold text-xl text-foreground">
+              Appearance
+            </h3>
+            <p className="text-muted-foreground text-sm mt-1">
+              Choose your Command Center's visual identity.
+            </p>
           </div>
           <div className="p-8 flex flex-col gap-4">
             <div className="grid grid-cols-2 gap-4">
@@ -68,15 +104,31 @@ export default function Settings() {
                   <Sun className="w-5 h-5 text-amber-700" />
                 </div>
                 <div>
-                  <p className="font-semibold text-foreground text-sm">THE ARCHIVE</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Cream & Burgundy — elegant dossier</p>
+                  <p className="font-semibold text-foreground text-sm">
+                    THE ARCHIVE
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Cream & Burgundy — elegant dossier
+                  </p>
                 </div>
                 {/* Mini preview */}
-                <div className="w-full h-12 rounded-xl overflow-hidden flex gap-1.5 p-2" style={{ background: "#FDFBF7" }}>
-                  <div className="w-1/4 h-full rounded-lg" style={{ background: "#F0E8DF" }} />
+                <div
+                  className="w-full h-12 rounded-xl overflow-hidden flex gap-1.5 p-2"
+                  style={{ background: "#FDFBF7" }}
+                >
+                  <div
+                    className="w-1/4 h-full rounded-lg"
+                    style={{ background: "#F0E8DF" }}
+                  />
                   <div className="flex-1 flex flex-col gap-1 justify-center px-1">
-                    <div className="h-1.5 w-3/4 rounded-full" style={{ background: "#800020", opacity: 0.7 }} />
-                    <div className="h-1 w-1/2 rounded-full" style={{ background: "#6B6B6B", opacity: 0.4 }} />
+                    <div
+                      className="h-1.5 w-3/4 rounded-full"
+                      style={{ background: "#800020", opacity: 0.7 }}
+                    />
+                    <div
+                      className="h-1 w-1/2 rounded-full"
+                      style={{ background: "#6B6B6B", opacity: 0.4 }}
+                    />
                   </div>
                 </div>
               </button>
@@ -99,27 +151,50 @@ export default function Settings() {
                   <Moon className="w-5 h-5 text-slate-200" />
                 </div>
                 <div>
-                  <p className="font-semibold text-foreground text-sm">THE WAR ROOM</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Navy & Burgundy — tactical command</p>
+                  <p className="font-semibold text-foreground text-sm">
+                    THE WAR ROOM
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Navy & Burgundy — tactical command
+                  </p>
                 </div>
                 {/* Mini preview */}
-                <div className="w-full h-12 rounded-xl overflow-hidden flex gap-1.5 p-2" style={{ background: "#0B1221" }}>
-                  <div className="w-1/4 h-full rounded-lg" style={{ background: "#131E35" }} />
+                <div
+                  className="w-full h-12 rounded-xl overflow-hidden flex gap-1.5 p-2"
+                  style={{ background: "#0B1221" }}
+                >
+                  <div
+                    className="w-1/4 h-full rounded-lg"
+                    style={{ background: "#131E35" }}
+                  />
                   <div className="flex-1 flex flex-col gap-1 justify-center px-1">
-                    <div className="h-1.5 w-3/4 rounded-full" style={{ background: "#A0002A", opacity: 0.8 }} />
-                    <div className="h-1 w-1/2 rounded-full" style={{ background: "#94A3B8", opacity: 0.4 }} />
+                    <div
+                      className="h-1.5 w-3/4 rounded-full"
+                      style={{ background: "#A0002A", opacity: 0.8 }}
+                    />
+                    <div
+                      className="h-1 w-1/2 rounded-full"
+                      style={{ background: "#94A3B8", opacity: 0.4 }}
+                    />
                   </div>
                 </div>
               </button>
             </div>
           </div>
         </motion.div>
- 
+
         {/* ── Device Optimization ── */}
-        <motion.div variants={item} className="rounded-3xl border border-primary/10 bg-card shadow-sm overflow-hidden">
+        <motion.div
+          variants={item}
+          className="rounded-3xl border border-primary/10 bg-card shadow-sm overflow-hidden"
+        >
           <div className="px-8 py-6 border-b border-border/50">
-            <h3 className="font-geist font-semibold text-xl text-foreground">Device Optimization</h3>
-            <p className="text-muted-foreground text-sm mt-1">Adjust how the interface fits on your screen.</p>
+            <h3 className="font-geist font-semibold text-xl text-foreground">
+              Device Optimization
+            </h3>
+            <p className="text-muted-foreground text-sm mt-1">
+              Adjust how the interface fits on your screen.
+            </p>
           </div>
           <div className="p-8 flex flex-col gap-4">
             <div className="grid grid-cols-2 gap-4">
@@ -140,11 +215,15 @@ export default function Settings() {
                   <Monitor className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="font-semibold text-foreground text-sm">Adaptive Mode</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Recommended for tablets & laptops.</p>
+                  <p className="font-semibold text-foreground text-sm">
+                    Adaptive Mode
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Recommended for tablets & laptops.
+                  </p>
                 </div>
               </button>
- 
+
               <button
                 onClick={() => setLayoutMode("mobile-optimized")}
                 className={`relative flex flex-col gap-3 p-5 rounded-2xl border-2 transition-all text-left group ${
@@ -162,8 +241,12 @@ export default function Settings() {
                   <Smartphone className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="font-semibold text-foreground text-sm">Phone Mode</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Compacted layout for small screens.</p>
+                  <p className="font-semibold text-foreground text-sm">
+                    Phone Mode
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Compacted layout for small screens.
+                  </p>
                 </div>
               </button>
             </div>
@@ -175,31 +258,62 @@ export default function Settings() {
         </motion.div>
 
         {/* ── Profile ── */}
-        <motion.div variants={item} className="rounded-3xl border border-primary/10 bg-card shadow-sm overflow-hidden">
+        <motion.div
+          variants={item}
+          className="rounded-3xl border border-primary/10 bg-card shadow-sm overflow-hidden"
+        >
           <div className="px-8 py-6 border-b border-border/50">
-            <h3 className="font-geist font-semibold text-xl text-foreground">Profile Information</h3>
-            <p className="text-sm text-muted-foreground mt-1">Update your delegate credentials.</p>
+            <h3 className="font-geist font-semibold text-xl text-foreground">
+              Profile Information
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Update your delegate credentials.
+            </p>
           </div>
           <div className="p-8 flex flex-col gap-5">
             <div className="flex items-center gap-4 mb-2">
-              <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-playfair font-bold text-2xl shrink-0">N</div>
+              <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-playfair font-bold text-2xl shrink-0">
+                N
+              </div>
               <div>
                 <p className="font-semibold text-foreground">Nicolas Saridar</p>
-                <p className="text-sm text-muted-foreground">Administrator · Free Plan</p>
+                <p className="text-sm text-muted-foreground">
+                  Administrator · Free Plan
+                </p>
               </div>
             </div>
             <div className="grid gap-2">
-              <label className="text-sm font-medium text-foreground">Full Name</label>
-              <Input defaultValue="Nicolas Saridar" className="rounded-2xl border-border max-w-md h-11" />
+              <label className="text-sm font-medium text-foreground">
+                Full Name
+              </label>
+              <Input
+                defaultValue="Nicolas Saridar"
+                className="rounded-2xl border-border max-w-md h-11"
+              />
             </div>
             <div className="grid gap-2">
-              <label className="text-sm font-medium text-foreground">Email Address</label>
-              <Input defaultValue="nicolas@example.com" type="email" className="rounded-2xl border-border max-w-md h-11" />
+              <label className="text-sm font-medium text-foreground">
+                Email Address
+              </label>
+              <Input
+                defaultValue="nicolas@example.com"
+                type="email"
+                className="rounded-2xl border-border max-w-md h-11"
+              />
             </div>
             <div className="grid gap-2">
-              <label className="text-sm font-medium text-foreground">Password</label>
-              <Input type="password" value="••••••••" className="rounded-2xl border-border max-w-md h-11" readOnly />
-              <button className="text-sm text-primary hover:underline w-fit">Change Password</button>
+              <label className="text-sm font-medium text-foreground">
+                Password
+              </label>
+              <Input
+                type="password"
+                value="••••••••"
+                className="rounded-2xl border-border max-w-md h-11"
+                readOnly
+              />
+              <button className="text-sm text-primary hover:underline w-fit">
+                Change Password
+              </button>
             </div>
             <Button className="rounded-full w-fit px-8 bg-foreground text-background hover:bg-foreground/90 mt-2">
               Save Changes
@@ -208,18 +322,27 @@ export default function Settings() {
         </motion.div>
 
         {/* ── Daily Usage ── */}
-        <motion.div variants={item} className="rounded-3xl border border-primary/10 bg-card shadow-sm overflow-hidden">
+        <motion.div
+          variants={item}
+          className="rounded-3xl border border-primary/10 bg-card shadow-sm overflow-hidden"
+        >
           <div className="px-8 py-6 border-b border-border/50 flex items-center justify-between">
             <div>
-              <h3 className="font-geist font-semibold text-xl text-foreground">Daily Usage</h3>
-              <p className="text-sm text-muted-foreground mt-1">Limits reset every day at midnight.</p>
+              <h3 className="font-geist font-semibold text-xl text-foreground">
+                Daily Usage
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Limits reset every day at midnight.
+              </p>
             </div>
             {isProUser ? (
               <div className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider flex items-center gap-2">
                 <Crown className="w-3 h-3" /> Pro Plan
               </div>
             ) : (
-              <div className="px-4 py-2 rounded-full border border-border text-muted-foreground text-xs font-semibold uppercase tracking-wider">Free Plan</div>
+              <div className="px-4 py-2 rounded-full border border-border text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+                Free Plan
+              </div>
             )}
           </div>
           <div className="p-8 flex flex-col gap-4">
@@ -235,7 +358,9 @@ export default function Settings() {
                   </div>
                   <div className="flex-1">
                     <div className="flex justify-between items-end mb-1.5">
-                      <span className="text-sm font-medium text-foreground">{label}</span>
+                      <span className="text-sm font-medium text-foreground">
+                        {label}
+                      </span>
                       <span className="text-xs text-muted-foreground font-mono">
                         {isProUser ? "∞" : `${used} / ${limit} today`}
                       </span>
@@ -254,10 +379,17 @@ export default function Settings() {
         </motion.div>
 
         {/* ── Subscription ── */}
-        <motion.div variants={item} className="rounded-3xl border border-primary/10 bg-card shadow-sm overflow-hidden">
+        <motion.div
+          variants={item}
+          className="rounded-3xl border border-primary/10 bg-card shadow-sm overflow-hidden"
+        >
           <div className="px-8 py-6 border-b border-border/50">
-            <h3 className="font-geist font-semibold text-xl text-foreground">Subscription & Billing</h3>
-            <p className="text-sm text-muted-foreground mt-1">Upgrade for unlimited access to every module.</p>
+            <h3 className="font-geist font-semibold text-xl text-foreground">
+              Subscription & Billing
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Upgrade for unlimited access to every module.
+            </p>
           </div>
           <div className="p-8 grid md:grid-cols-2 gap-6">
             {/* Free Tier */}
@@ -265,7 +397,9 @@ export default function Settings() {
               <h4 className="font-geist font-bold text-lg">Observer</h4>
               <div className="mt-3 flex items-baseline font-playfair">
                 <span className="text-5xl font-black">$0</span>
-                <span className="text-xl font-medium text-muted-foreground ml-1">/mo</span>
+                <span className="text-xl font-medium text-muted-foreground ml-1">
+                  /mo
+                </span>
               </div>
               <ul className="mt-6 space-y-2.5 flex-1">
                 {[
@@ -274,13 +408,22 @@ export default function Settings() {
                   `${FREE_DAILY_LIMITS.debates} debate simulation per day`,
                   `${FREE_DAILY_LIMITS.crisis} crisis simulations per day`,
                 ].map((f) => (
-                  <li key={f} className="flex gap-3 text-sm text-muted-foreground">
+                  <li
+                    key={f}
+                    className="flex gap-3 text-sm text-muted-foreground"
+                  >
                     <Check className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
                     {f}
                   </li>
                 ))}
               </ul>
-              <Button variant="outline" className="mt-8 w-full rounded-full" disabled>Current Plan</Button>
+              <Button
+                variant="outline"
+                className="mt-8 w-full rounded-full"
+                disabled
+              >
+                Current Plan
+              </Button>
             </div>
 
             {/* Pro Tier */}
@@ -288,13 +431,19 @@ export default function Settings() {
               <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold px-4 py-1.5 rounded-bl-2xl uppercase tracking-widest">
                 Recommended
               </div>
-              <h4 className="font-geist font-bold text-lg text-primary">Senior Diplomat</h4>
+              <h4 className="font-geist font-bold text-lg text-primary">
+                Senior Diplomat
+              </h4>
               <div className="mt-3 font-playfair">
                 <div className="flex items-baseline">
                   <span className="text-5xl font-black">$8</span>
-                  <span className="text-xl font-medium text-muted-foreground ml-1">/mo</span>
+                  <span className="text-xl font-medium text-muted-foreground ml-1">
+                    /mo
+                  </span>
                 </div>
-                <span className="text-xs text-muted-foreground">or $80/yr — save 16%</span>
+                <span className="text-xs text-muted-foreground">
+                  or $80/yr — save 16%
+                </span>
               </div>
               <ul className="mt-6 space-y-2.5 flex-1">
                 {[
@@ -316,30 +465,41 @@ export default function Settings() {
                   <Crown className="w-4 h-4 mr-2" />
                   Upgrade to Pro
                 </Button>
-                <p className="text-center text-xs text-muted-foreground">Includes a 3-day free trial · No card required</p>
+                <p className="text-center text-xs text-muted-foreground">
+                  Includes a 3-day free trial · No card required
+                </p>
               </div>
             </div>
           </div>
         </motion.div>
 
         {/* ── Sign Out ── */}
-        <motion.div variants={item} className="rounded-3xl border border-destructive/20 bg-destructive/5 shadow-sm overflow-hidden">
+        <motion.div
+          variants={item}
+          className="rounded-3xl border border-destructive/20 bg-destructive/5 shadow-sm overflow-hidden"
+        >
           <div className="px-8 py-6 border-b border-destructive/10">
-            <h3 className="font-geist font-semibold text-xl text-foreground">Sign Out</h3>
-            <p className="text-sm text-muted-foreground mt-1">End your current session and return to the login screen.</p>
+            <h3 className="font-geist font-semibold text-xl text-foreground">
+              Sign Out
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              End your current session and return to the login screen.
+            </p>
           </div>
           <div className="p-8">
             <Button
               variant="outline"
               className="rounded-full border-destructive/40 text-destructive hover:bg-destructive hover:text-destructive-foreground gap-2"
-              onClick={() => router.push("/login")}
+              onClick={() => {
+                router.push("/login");
+                sessionStorage.clear();
+              }}
             >
               <LogOut className="w-4 h-4" />
               Sign Out
             </Button>
           </div>
         </motion.div>
-
       </motion.div>
     </div>
   );
