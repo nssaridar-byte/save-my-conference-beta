@@ -64,7 +64,9 @@ const MOCK_ANALYSIS = {
 
 const TIP_ICONS = {
   strength: <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />,
-  warning: <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />,
+  warning: (
+    <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+  ),
   tip: <TrendingUp className="w-4 h-4 text-primary shrink-0 mt-0.5" />,
 };
 
