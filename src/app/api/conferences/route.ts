@@ -8,11 +8,13 @@ export async function GET(req: Request) {
     const cookieStore = await cookies();
     const token = cookieStore.get("token");
 
+    console.log(token);
     if (!token) return new Response("Unauthorized", { status: 401 });
     const decoded: { id: string } = verify(
       token.value,
       process.env.JWT_SECRET as string,
     ) as { id: string };
+
     if (!decoded) return new Response("Unauthorized", { status: 401 });
 
     const conferences = await prisma.conference.findMany({
@@ -51,7 +53,8 @@ export async function POST(req: Request) {
         status: "Inactive",
       },
     });
-    const { title, date, location, committee, country } = await req.json();
+    const { title, date, location, committee, country, topic } =
+      await req.json();
 
     if (
       !title ||
@@ -59,7 +62,8 @@ export async function POST(req: Request) {
       !location ||
       !committee ||
       !country ||
-      isEmpty([title, date, location, committee, country])
+      !topic ||
+      isEmpty([title, date, location, committee, country, topic])
     )
       return new Response("Please fill all fields", { status: 400 });
 
@@ -72,6 +76,7 @@ export async function POST(req: Request) {
         country,
         status: "Active",
         authorId: decoded.id,
+        topic,
       },
     });
 

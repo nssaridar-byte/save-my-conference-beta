@@ -1,6 +1,12 @@
 "use client";
 
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import {
+  Dispatch,
+  FormEvent,
+  SetStateAction,
+  useEffect,
+  useState,
+} from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
   FileText,
@@ -68,12 +74,10 @@ const fmtDate = (date: string) =>
 ═══════════════════════════════════════════════ */
 function ConferenceModal({
   initial,
-  onSave,
   onClose,
   setConferences,
 }: {
   initial?: Partial<Conference>;
-  onSave: (data: Omit<Conference, "id" | "createdAt">) => void;
   onClose: () => void;
   setConferences: Dispatch<SetStateAction<Conference[]>>;
 }) {
@@ -85,6 +89,7 @@ function ConferenceModal({
     country: initial?.country ?? "",
     topic: initial?.topic ?? "",
   });
+  const { setConferenceContext } = UseConference();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,14 +102,36 @@ function ConferenceModal({
         location: form.location,
         committee: form.committee,
         country: form.country,
+        topic: form.topic,
       })
       .then((res) => {
-        alert("Added");
         setConferences((prev: any) => [...prev, res.data.conference]);
-        onSave(form);
       })
       .catch((err) => {
         alert(err.response.data || err.message);
+      });
+  };
+  const handleEdit = (e: FormEvent) => {
+    e.preventDefault();
+    axios
+      .put(`/api/conferences/${initial?.id}`, {
+        title: form.title,
+        date: form.date,
+        location: form.location,
+        committee: form.committee,
+        country: form.country,
+        topic: form.topic,
+      })
+      .then((res) => {
+        alert("Edited");
+        onClose();
+        setConferenceContext(res.data.conference);
+        setConferences((prev) =>
+          prev.map((c) => (c.id == initial?.id ? res.data.conference : c)),
+        );
+      })
+      .catch((err) => {
+        console.log(err);
       });
   };
 
@@ -141,7 +168,10 @@ function ConferenceModal({
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form
+            onSubmit={initial?.id ? handleEdit : handleSubmit}
+            className="flex flex-col gap-4"
+          >
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium">
                 Conference Name<span className="text-primary ml-0.5">*</span>
@@ -250,17 +280,32 @@ function ConferenceModal({
 function ConferenceSwitcher({
   conferences,
   activeId,
+  setActiveIdState,
   setActiveConference,
-  deleteConference,
+  setConferences,
 }: {
   conferences: Conference[];
   activeId: string;
   setActiveConference: (conference: Conference) => void;
-  deleteConference: (id: string) => void;
+  setActiveIdState: Dispatch<SetStateAction<string>>;
+  setConferences: Dispatch<SetStateAction<Conference[]>>;
 }) {
   const active = conferences.find((c) => c.id === activeId);
   const [open, setOpen] = useState(false);
-
+  const { setConferenceContext } = UseConference();
+  const deleteConference = (deletedConference: Conference) => {
+    axios.delete(`/api/conferences/${deletedConference.id}`).then((res) => {
+      const newConferences = conferences.filter(
+        (c) => c.id !== deletedConference.id,
+      );
+      setConferences(newConferences);
+      sessionStorage.setItem("conference", JSON.stringify(newConferences));
+      if (activeId === deletedConference.id) {
+        setConferenceContext(null);
+        setActiveIdState("");
+      }
+    });
+  };
   return (
     <div className="relative">
       <button
@@ -314,7 +359,7 @@ function ConferenceSwitcher({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      deleteConference(c.id);
+                      deleteConference(c);
                     }}
                     className="w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-all shrink-0"
                   >
@@ -476,6 +521,29 @@ function ActiveDashboard({
       <motion.div variants={item} className="md:col-span-3">
         <RoadmapPanel />
       </motion.div>
+
+      {/* Stat tiles */}
+      {/* {[
+        { label: "Speech Quality", value: "—", icon: Trophy },
+        { label: "Quiz Performance", value: "—", icon: Target },
+        {
+          label: "Days Until Conference",
+          value: days !== null && days > 0 ? `${days}d` : "—",
+          icon: Clock,
+        },
+      ].map(({ label, value, icon: Icon }) => (
+        <motion.div
+          key={label}
+          variants={item}
+          className="rounded-3xl border border-primary/10 bg-card shadow-sm p-8 flex flex-col justify-between group hover:border-primary/30 transition-colors"
+        >
+          <span className="text-sm text-muted-foreground">{label}</span>
+          <div className="mt-4 flex items-end justify-between">
+            <span className="text-5xl font-playfair font-bold">{value}</span>
+            <Icon className="w-8 h-8 text-primary/20 group-hover:text-primary/40 transition-colors" />
+          </div>
+        </motion.div>
+      ))} */}
     </motion.div>
   );
 }
@@ -499,7 +567,10 @@ export default function Dashboard() {
     setShowModal(true);
   };
 
-  const handleSave = () => {};
+  const handleSave = (_data: Omit<Conference, "id" | "createdAt">) => {
+    // Conference creation is handled inside ConferenceModal via axios.post.
+    // This callback is a no-op post-save hook (e.g. for future analytics/logging).
+  };
   const fetchConference = async () => {
     await axios
       .get("/api/conferences/active")
@@ -529,12 +600,6 @@ export default function Dashboard() {
     fetchConferences();
   }, []);
 
-  const deleteConference = (conference: Conference) => {
-    axios.delete(`/api/conferences/${conference.id}`).then((res) => {
-      alert("Conference Deleted");
-      setConferences((prev) => prev.filter((c) => c.id !== conference.id));
-    });
-  };
   const setActiveConference = (conference: Conference) => {
     setActiveIdState(conference.id);
     setConferenceContext(conference);
@@ -547,6 +612,7 @@ export default function Dashboard() {
         setConferenceContext(null);
       });
   };
+  useEffect(() => {}, []);
   return (
     <div className="flex flex-col gap-8 pb-8">
       {/* Header */}
@@ -567,10 +633,9 @@ export default function Dashboard() {
             <ConferenceSwitcher
               conferences={conferences}
               activeId={activeId as string}
+              setConferences={setConferences}
               setActiveConference={setActiveConference}
-              deleteConference={() =>
-                deleteConference(conference as Conference)
-              }
+              setActiveIdState={setActiveIdState}
             />
           )}
           <Button
@@ -584,7 +649,7 @@ export default function Dashboard() {
       </div>
 
       {/* Body */}
-      {conference ? (
+      {conferences.length > 0 && conference !== null ? (
         <ActiveDashboard
           conference={conference as Conference}
           onEdit={openEdit}
@@ -598,7 +663,6 @@ export default function Dashboard() {
         {showModal && (
           <ConferenceModal
             initial={editing ?? undefined}
-            onSave={handleSave}
             onClose={() => setShowModal(false)}
             setConferences={setConferences}
           />
