@@ -280,16 +280,19 @@ function ConferenceModal({
 function ConferenceSwitcher({
   conferences,
   activeId,
+  setActiveIdState,
   setActiveConference,
   setConferences,
 }: {
   conferences: Conference[];
   activeId: string;
   setActiveConference: (conference: Conference) => void;
+  setActiveIdState: Dispatch<SetStateAction<string>>;
   setConferences: Dispatch<SetStateAction<Conference[]>>;
 }) {
   const active = conferences.find((c) => c.id === activeId);
   const [open, setOpen] = useState(false);
+  const { setConferenceContext } = UseConference();
   const deleteConference = (deletedConference: Conference) => {
     axios.delete(`/api/conferences/${deletedConference.id}`).then((res) => {
       const newConferences = conferences.filter(
@@ -297,6 +300,10 @@ function ConferenceSwitcher({
       );
       setConferences(newConferences);
       sessionStorage.setItem("conference", JSON.stringify(newConferences));
+      if (activeId === deletedConference.id) {
+        setConferenceContext(null);
+        setActiveIdState("");
+      }
     });
   };
   return (
@@ -514,6 +521,29 @@ function ActiveDashboard({
       <motion.div variants={item} className="md:col-span-3">
         <RoadmapPanel />
       </motion.div>
+
+      {/* Stat tiles */}
+      {/* {[
+        { label: "Speech Quality", value: "—", icon: Trophy },
+        { label: "Quiz Performance", value: "—", icon: Target },
+        {
+          label: "Days Until Conference",
+          value: days !== null && days > 0 ? `${days}d` : "—",
+          icon: Clock,
+        },
+      ].map(({ label, value, icon: Icon }) => (
+        <motion.div
+          key={label}
+          variants={item}
+          className="rounded-3xl border border-primary/10 bg-card shadow-sm p-8 flex flex-col justify-between group hover:border-primary/30 transition-colors"
+        >
+          <span className="text-sm text-muted-foreground">{label}</span>
+          <div className="mt-4 flex items-end justify-between">
+            <span className="text-5xl font-playfair font-bold">{value}</span>
+            <Icon className="w-8 h-8 text-primary/20 group-hover:text-primary/40 transition-colors" />
+          </div>
+        </motion.div>
+      ))} */}
     </motion.div>
   );
 }
@@ -605,6 +635,7 @@ export default function Dashboard() {
               activeId={activeId as string}
               setConferences={setConferences}
               setActiveConference={setActiveConference}
+              setActiveIdState={setActiveIdState}
             />
           )}
           <Button

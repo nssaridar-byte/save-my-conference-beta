@@ -8,11 +8,13 @@ export async function GET(req: Request) {
     const cookieStore = await cookies();
     const token = cookieStore.get("token");
 
+    console.log(token);
     if (!token) return new Response("Unauthorized", { status: 401 });
     const decoded: { id: string } = verify(
       token.value,
       process.env.JWT_SECRET as string,
     ) as { id: string };
+
     if (!decoded) return new Response("Unauthorized", { status: 401 });
 
     const conferences = await prisma.conference.findMany({
