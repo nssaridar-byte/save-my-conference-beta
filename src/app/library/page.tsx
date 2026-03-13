@@ -11,7 +11,6 @@ import {
   Search, 
   Image as ImageIcon, 
   Folder, 
-  LayoutBoards,
   FolderOpen
 } from "lucide-react";
 import { useState, useRef } from "react";

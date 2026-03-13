@@ -275,111 +275,6 @@ function ConferenceModal({
 }
 
 /* ═══════════════════════════════════════════════
-   Conference Switcher Dropdown
-═══════════════════════════════════════════════ */
-function ConferenceSwitcher({
-  conferences,
-  activeId,
-  setActiveIdState,
-  setActiveConference,
-  setConferences,
-}: {
-  conferences: Conference[];
-  activeId: string;
-  setActiveConference: (conference: Conference) => void;
-  setActiveIdState: Dispatch<SetStateAction<string>>;
-  setConferences: Dispatch<SetStateAction<Conference[]>>;
-}) {
-  const active = conferences.find((c) => c.id === activeId);
-  const [open, setOpen] = useState(false);
-  const { setConferenceContext } = UseConference();
-  const deleteConference = (deletedConference: Conference) => {
-    axios.delete(`/api/conferences/${deletedConference.id}`).then((res) => {
-      const newConferences = conferences.filter(
-        (c) => c.id !== deletedConference.id,
-      );
-      setConferences(newConferences);
-      sessionStorage.setItem("conference", JSON.stringify(newConferences));
-      if (activeId === deletedConference.id) {
-        setConferenceContext(null);
-        setActiveIdState("");
-      }
-    });
-  };
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-full border border-border bg-card hover:bg-muted/30 transition-colors text-sm font-semibold"
-      >
-        <span className="max-w-[180px] truncate">
-          {active?.title ?? "Select conference"}
-        </span>
-        <ChevronDown
-          className={`w-4 h-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-2 w-72 rounded-2xl border border-border bg-card shadow-xl z-30 overflow-hidden"
-          >
-            <div className="p-2 flex flex-col gap-0.5 max-h-64 overflow-y-auto">
-              {conferences.map((c) => (
-                <div
-                  key={c.id}
-                  className={`flex items-center gap-2 rounded-xl px-3 py-2.5 group transition-colors cursor-pointer ${
-                    c.id === activeId ? "bg-primary/10" : "hover:bg-muted/40"
-                  }`}
-                  onClick={() => {
-                    setActiveConference(c);
-                    setOpen(false);
-                  }}
-                >
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className={`text-sm font-medium truncate ${c.id === activeId ? "text-primary" : "text-foreground"}`}
-                    >
-                      {c.title}
-                    </p>
-                    {c.committee && (
-                      <p className="text-xs text-muted-foreground truncate">
-                        {c.committee}
-                      </p>
-                    )}
-                  </div>
-                  {c.id === activeId && (
-                    <Check className="w-4 h-4 text-primary shrink-0" />
-                  )}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteConference(c);
-                    }}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-all shrink-0"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {open && (
-        <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
-      )}
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════
    Empty State
 ═══════════════════════════════════════════════ */
 function EmptyState({ onAdd }: { onAdd: () => void }) {
@@ -629,15 +524,6 @@ export default function Dashboard() {
         </div>
 
         <div className="flex items-center gap-3">
-          {conferences.length > 0 && (
-            <ConferenceSwitcher
-              conferences={conferences}
-              activeId={activeId as string}
-              setConferences={setConferences}
-              setActiveConference={setActiveConference}
-              setActiveIdState={setActiveIdState}
-            />
-          )}
           <Button
             onClick={openCreate}
             variant="outline"
