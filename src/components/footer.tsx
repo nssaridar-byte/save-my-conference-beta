@@ -22,13 +22,19 @@ export function Footer() {
           </p>
         </div>
 
-        <div className="flex flex-col lg:items-end gap-0.5 shrink-0 opacity-80">
+        <div className="flex flex-col lg:items-end gap-1 shrink-0 opacity-80">
           <p className="text-xs font-semibold text-foreground/70">
             © {currentYear} Save My Conference
           </p>
           <p className="text-[10px] text-muted-foreground/50">
             All rights reserved worldwide.
           </p>
+          <a 
+            href="mailto:savemyconference@gmail.com" 
+            className="text-[10px] text-primary hover:underline font-medium mt-1"
+          >
+            Contact Support: savemyconference@gmail.com
+          </a>
         </div>
 
       </div>

@@ -9,6 +9,7 @@ import { UseUser } from "../../../contexts/UserContext";
 import Error from "@/components/Error";
 import { useRouter } from "next/navigation";
 import { Captcha } from "@/components/captcha";
+import { Logo } from "@/components/logo";
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 24 },
@@ -34,11 +35,11 @@ export default function LoginPage() {
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'%3E%3Cpath d='M0 38.59l2.83-2.83 1.41 1.41L1.41 40H0v-1.41zM0 1.4l2.83 2.83 1.41-1.41L1.41 0H0v1.41zM38.59 40l-2.83-2.83 1.41-1.41L40 38.59V40h-1.41zM40 1.41l-2.83 2.83-1.41-1.41L38.59 0H40v1.41zM20 18.6l2.83-2.83 1.41 1.41L21.41 20l2.83 2.83-1.41 1.41L20 21.41l-2.83 2.83-1.41-1.41L18.59 20l-2.83-2.83 1.41-1.41L20 18.59z'/%3E%3C/g%3E%3C/svg%3E\")" }} />
         <div className="relative z-10 flex flex-col items-center gap-8 max-w-sm">
           {/* Logo mark */}
-          <div className="w-16 h-16 rounded-3xl bg-white/20 flex items-center justify-center text-white font-playfair font-bold text-3xl shadow-lg">M</div>
+          <Logo size="lg" />
           {/* Brand name */}
-          <div>
-            <p className="text-white font-playfair font-bold text-2xl tracking-wide">SAVE MY CONFERENCE</p>
-            <p className="text-white/60 text-xs uppercase tracking-widest mt-1">MUN Command Center</p>
+          <div className="text-center">
+            <p className="text-white font-playfair font-bold text-2xl tracking-wide uppercase">Save My Conference</p>
+            <p className="text-white/60 text-[10px] uppercase tracking-[0.3em] mt-2">MUN Command Center</p>
           </div>
           {/* Divider */}
           <div className="w-12 h-px bg-white/30" />
@@ -47,6 +48,18 @@ export default function LoginPage() {
             "Diplomacy is the art of letting someone have your way."
           </blockquote>
           <p className="text-white/50 font-geist text-sm">— Daniele Vare, Italian Diplomat</p>
+          
+          {/* Support Note */}
+          <div className="mt-8 pt-8 border-t border-white/10 w-full">
+            <p className="text-white/40 text-[10px] uppercase tracking-widest mb-2 font-geist">Technical Support</p>
+            <a 
+              href="mailto:savemyconference@gmail.com" 
+              className="text-white/70 hover:text-white transition-colors font-medium text-sm flex items-center justify-center gap-2"
+            >
+              <Mail className="w-4 h-4" />
+              savemyconference@gmail.com
+            </a>
+          </div>
         </div>
       </div>
 
@@ -60,8 +73,7 @@ export default function LoginPage() {
         >
           {/* Logo (mobile only) */}
           <div className="flex lg:hidden items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground font-playfair font-bold">M</div>
-            <p className="font-playfair font-bold text-lg">Save My Conference</p>
+            <Logo size="sm" showText />
           </div>
 
           <div className="mb-8">

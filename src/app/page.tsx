@@ -15,6 +15,7 @@ import {
   Zap,
   Crown,
 } from "lucide-react";
+import { Logo } from "@/components/logo";
 
 const features = [
   {
@@ -83,10 +84,7 @@ export default function LandingPage() {
 
       {/* ── Nav ── */}
       <nav className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-6 md:px-16 py-4 bg-background/80 backdrop-blur-md border-b border-border/50">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-playfair font-bold text-lg">M</div>
-          <span className="font-playfair font-bold text-base tracking-wide hidden sm:block">SAVE MY CONFERENCE</span>
-        </div>
+        <Logo size="sm" showText />
         <div className="flex items-center gap-3">
           <Link
             href="/login"
@@ -278,7 +276,7 @@ export default function LandingPage() {
             viewport={{ once: true }}
             custom={0}
           >
-            <div className="w-16 h-16 rounded-3xl bg-primary mx-auto flex items-center justify-center text-primary-foreground font-playfair font-bold text-3xl mb-8 shadow-lg">M</div>
+            <Logo size="lg" className="mx-auto mb-8" />
             <h2 className="font-playfair text-4xl md:text-5xl font-bold mb-6">
               Ready to dominate the floor?
             </h2>

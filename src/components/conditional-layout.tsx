@@ -12,6 +12,8 @@ import { useLayoutSettings } from "@/hooks/use-layout-settings";
 // Routes that should NOT show the sidebar (full-screen pages)
 const SIDEBAR_FREE_PREFIXES = ["/login", "/pricing", "/checkout"];
 
+import { Logo } from "@/components/logo";
+
 export function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { layoutMode } = useLayoutSettings();
@@ -43,7 +45,7 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2">
               <SidebarTrigger className="-ml-1" />
               <div className="mr-2 h-4 w-px bg-border" />
-              <h1 className="font-playfair font-semibold text-lg truncate min-w-0">Save My Conference</h1>
+              <Logo size="sm" showText />
             </div>
             <GlobalConferenceSwitcher />
           </header>
