@@ -2,28 +2,16 @@ import { TSpeechAnalyze } from "@/app/types";
 import { ai } from "@/lib/gemini";
 import { prisma } from "@/lib/prisma";
 import { subscriptionValid } from "@/lib/subscription";
+import { withAuth } from "@/lib/auth";
 import { Subscription } from "@prisma/client";
 import { JsonObject } from "@prisma/client/runtime/client";
 import { differenceInHours } from "date-fns";
-import { verify } from "jsonwebtoken";
-import { cookies } from "next/headers";
 
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export const POST = withAuth(async (req, user, { params }) => {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("token");
-
-    if (!token) return new Response("Unauthorized", { status: 401 });
-
-    const decoded: any = verify(token.value, process.env.JWT_SECRET!);
-    if (!decoded) return new Response("Unauthorized", { status: 401 });
-
-    const user = await prisma.user.findUnique({
+    const fullUser = await prisma.user.findUnique({
       where: {
-        id: decoded.id,
+        id: user.id,
       },
       include: {
         subscription: {
@@ -34,34 +22,31 @@ export async function POST(
       },
     });
 
-    if (!user) return new Response("Unauthorized", { status: 401 });
+    if (!fullUser) return new Response("Unauthorized", { status: 401 });
     const { id } = await params;
 
     let usage = await prisma.usage.findUnique({
       where: {
-        userId: user.id,
+        userId: fullUser.id,
       },
     });
-    console.log(await subscriptionValid(user.subscription as any));
 
     // Check if usage exists and if the user is on the free tier (no subscription or invalid subscription)
     const isPro =
-      user.subscription &&
-      (await subscriptionValid(user.subscription as unknown as Subscription));
+      fullUser.subscription &&
+      (await subscriptionValid(fullUser.subscription as unknown as Subscription));
 
     if (usage && !isPro) {
-      // If the speechCount + 1 is 3 update the speechesLimit date but still allow it to pass through
       if (usage.speechesCount + 1 == 3) {
         await prisma.usage.update({
           where: {
-            userId: user.id,
+            userId: fullUser.id,
           },
           data: {
             speechesLimitHitAt: new Date(),
           },
         });
       }
-      // If the user has a speechesLimitHitAt date and 24 hours have passed since that day reset the speechCount and speechesLimitHitAt else return a 403 error
       if (usage.speechesLimitHitAt) {
         const hoursSinceLastHit = differenceInHours(
           new Date(),
@@ -70,7 +55,7 @@ export async function POST(
 
         if (hoursSinceLastHit >= 24) {
           usage = await prisma.usage.update({
-            where: { userId: user.id },
+            where: { userId: fullUser.id },
             data: { speechesCount: 0, speechesLimitHitAt: null },
           });
         } else {
@@ -86,7 +71,7 @@ export async function POST(
     });
     if (!speech) return new Response("Speech not found", { status: 404 });
 
-    if (speech.userId !== user.id)
+    if (speech.userId !== fullUser.id)
       return new Response("Unauthorized", { status: 401 });
 
     const response = await ai.models.generateContent({
@@ -151,9 +136,9 @@ JSON STRUCTURE:
     };
     await prisma.$transaction([
       prisma.usage.upsert({
-        where: { userId: user.id },
+        where: { userId: fullUser.id },
         update: { speechesCount: { increment: 1 } },
-        create: { userId: user.id, speechesCount: 1 },
+        create: { userId: fullUser.id, speechesCount: 1 },
       }),
       prisma.speech.update({
         where: {
@@ -171,4 +156,4 @@ JSON STRUCTURE:
       status: 500,
     });
   }
-}
+});

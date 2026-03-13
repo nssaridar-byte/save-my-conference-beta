@@ -1,25 +1,12 @@
 import { prisma } from "@/lib/prisma";
-import { verify } from "jsonwebtoken";
-import { cookies } from "next/headers";
+import { withAuth } from "@/lib/auth";
 import { isEmpty } from "../isEmpty";
 
-export async function GET(req: Request) {
+export const GET = withAuth(async (req, user) => {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("token");
-
-    console.log(token);
-    if (!token) return new Response("Unauthorized", { status: 401 });
-    const decoded: { id: string } = verify(
-      token.value,
-      process.env.JWT_SECRET as string,
-    ) as { id: string };
-
-    if (!decoded) return new Response("Unauthorized", { status: 401 });
-
     const conferences = await prisma.conference.findMany({
       where: {
-        authorId: decoded.id,
+        authorId: user.id,
       },
       include: {
         author: true,
@@ -28,31 +15,22 @@ export async function GET(req: Request) {
 
     return Response.json({ conferences });
   } catch (error: any) {
-    return new Response(error, { status: 500 });
+    return new Response(error.message || "Internal Server Error", { status: 500 });
   }
-}
-export async function POST(req: Request) {
+});
+
+export const POST = withAuth(async (req, user) => {
   try {
-    const cookieStore = await cookies();
-
-    const token = cookieStore.get("token");
-
-    if (!token) return new Response("Unauthorized", { status: 401 });
-    const decoded: { id: string } = verify(
-      token.value,
-      process.env.JWT_SECRET as string,
-    ) as { id: string };
-    if (!decoded) return new Response("Unauthorized", { status: 401 });
-
     await prisma.conference.updateMany({
       where: {
-        authorId: decoded.id,
+        authorId: user.id,
         status: "Active",
       },
       data: {
         status: "Inactive",
       },
     });
+
     const { title, date, location, committee, country, topic } =
       await req.json();
 
@@ -75,7 +53,7 @@ export async function POST(req: Request) {
         committee,
         country,
         status: "Active",
-        authorId: decoded.id,
+        authorId: user.id,
         topic,
       },
     });
@@ -83,6 +61,6 @@ export async function POST(req: Request) {
     return Response.json({ conference });
   } catch (error: any) {
     console.log(error);
-    return new Response(error, { status: 500 });
+    return new Response(error.message || "Internal Server Error", { status: 500 });
   }
-}
+});

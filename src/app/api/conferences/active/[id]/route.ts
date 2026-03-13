@@ -1,58 +1,50 @@
 import { prisma } from "@/lib/prisma";
-import { verify } from "jsonwebtoken";
-import { cookies } from "next/headers";
+import { withAuth, AuthUser } from "@/lib/auth";
 
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("token");
+export const POST = withAuth(
+  async (req: Request, user: AuthUser, { params }: { params: Promise<{ id: string }> }) => {
+    try {
+      const { id } = await params;
+      const conference = await prisma.conference.findUnique({
+        where: {
+          id: id as string,
+        },
+      });
 
-    if (!token) return new Response("Unauthorized", { status: 401 });
+      if (!conference)
+        return new Response("Conference not found", { status: 404 });
 
-    const decoded: { id: string } = verify(
-      token.value,
-      process.env.JWT_SECRET as string,
-    ) as { id: string };
-    if (!decoded) return new Response("Unauthorized", { status: 401 });
+      if (conference.authorId !== user.id)
+        return new Response("Forbidden", { status: 403 });
 
-    const { id } = await params;
-    const conference = await prisma.conference.findUnique({
-      where: {
-        id: id as string,
-      },
-    });
+      await prisma.conference.update({
+        where: {
+          id: id as string,
+        },
+        data: {
+          status: "Active",
+        },
+      });
 
-    if (!conference)
-      return new Response("Conference not found", { status: 404 });
+      await prisma.conference.updateMany({
+        where: {
+          authorId: user.id,
+          NOT: [
+            {
+              id: id as string,
+            },
+          ],
+        },
+        data: {
+          status: "Inactive",
+        },
+      });
 
-    await prisma.conference.update({
-      where: {
-        id: id as string,
-      },
-      data: {
-        status: "Active",
-      },
-    });
-
-    await prisma.conference.updateMany({
-      where: {
-        authorId: decoded.id,
-        NOT: [
-          {
-            id: id as string,
-          },
-        ],
-      },
-      data: {
-        status: "Inactive",
-      },
-    });
-
-    return Response.json({ conference });
-  } catch (error: any) {
-    return new Response(error, { status: 500 });
+      return Response.json({ conference });
+    } catch (error: any) {
+      return new Response(error.message || "An unexpected error occurred", {
+        status: 500,
+      });
+    }
   }
-}
+);
