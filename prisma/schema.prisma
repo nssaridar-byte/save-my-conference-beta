@@ -24,6 +24,7 @@ model User {
   speeches     Speech[]
   files        File[]
   conferences  Conference[]
+  quizes Quiz[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -68,7 +69,15 @@ model Speech {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
+model Quiz {
+  id String @id @default(cuid())
+  conferenceId String
+  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  questions Json?
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
 model File {
   id       String  @id @default(cuid())
   userId   String
@@ -96,5 +105,6 @@ model Conference {
   authorId  String
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   topic String
+  quizes Quiz[]
   speeches Speech[]
 }

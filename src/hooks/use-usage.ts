@@ -3,8 +3,8 @@
  * When backend is connected, replace resetIfNewDay / incrementUsage
  * with API calls to GET /api/usage and POST /api/usage/increment.
  */
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export const FREE_DAILY_LIMITS = {
   speeches: 3,
@@ -53,7 +53,8 @@ export const useUsageStore = create<UsageState>()(
         set((state) => {
           // Reset if it's a new day
           const today = todayStr();
-          const current = state.usage.date === today ? state.usage : freshUsage();
+          const current =
+            state.usage.date === today ? state.usage : freshUsage();
           return {
             usage: { ...current, [type]: current[type] + 1, date: today },
           };
@@ -80,8 +81,8 @@ export const useUsageStore = create<UsageState>()(
       },
     }),
     {
-      name: 'smc-daily-usage',
+      name: "smc-daily-usage",
       // When backend is ready: sync on hydration via onRehydrateStorage
-    }
-  )
+    },
+  ),
 );
