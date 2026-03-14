@@ -20,9 +20,12 @@ export async function subscriptionValid(subscription: Subscription) {
     });
   }
 
-  if (newSubscription.status?.toLowerCase() == "active") {
-    return true;
+  if (
+    newSubscription.status?.toLowerCase() == "inactive" ||
+    isPast(subscription.currentPeriodEnd as Date)
+  ) {
+    return false;
   }
 
-  return false;
+  return true;
 }
