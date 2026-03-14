@@ -75,11 +75,9 @@ const fmtDate = (date: string) =>
 function ConferenceModal({
   initial,
   onClose,
-  setConferences,
 }: {
   initial?: Partial<Conference>;
   onClose: () => void;
-  setConferences: Dispatch<SetStateAction<Conference[]>>;
 }) {
   const [form, setForm] = useState({
     title: initial?.title ?? "",
@@ -89,7 +87,7 @@ function ConferenceModal({
     country: initial?.country ?? "",
     topic: initial?.topic ?? "",
   });
-  const { setConferenceContext } = UseConference();
+  const { setConferenceContext, conferences, setConferences } = UseConference();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,8 +102,9 @@ function ConferenceModal({
         country: form.country,
         topic: form.topic,
       })
-      .then((res) => {
-        setConferences((prev: any) => [...prev, res.data.conference]);
+      .then(async (res) => {
+        setConferences([...conferences, res.data.conference]);
+        setConferenceContext(res.data.conference);
       })
       .catch((err) => {
         alert(err.response.data || err.message);
@@ -126,9 +125,10 @@ function ConferenceModal({
         alert("Edited");
         onClose();
         setConferenceContext(res.data.conference);
-        setConferences((prev) =>
-          prev.map((c) => (c.id == initial?.id ? res.data.conference : c)),
+        const newConferences = conferences.map((c) =>
+          c.id === initial?.id ? res.data.conference : c,
         );
+        setConferences(newConferences);
       })
       .catch((err) => {
         console.log(err);
@@ -447,11 +447,11 @@ function ActiveDashboard({
    Page
 ═══════════════════════════════════════════════ */
 export default function Dashboard() {
+  const { conferences, setConferences, conference, setConferenceContext } =
+    UseConference();
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Conference | null>(null);
-  const [conferences, setConferences] = useState<Conference[]>([]);
   const [activeId, setActiveIdState] = useState<string>("");
-  const { conference, setConferenceContext } = UseConference();
   const openCreate = () => {
     setEditing(null);
     setShowModal(true);
@@ -478,21 +478,10 @@ export default function Dashboard() {
         console.log(err);
       });
   };
-  const fetchConferences = async () => {
-    await axios
-      .get("/api/conferences")
-      .then((res) => {
-        console.log("conferences: ", res.data.conferences);
-
-        setConferences(res.data.conferences);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
   useEffect(() => {
     fetchConference();
-    fetchConferences();
+    // fetchConferences is already called in the Provider's useEffect,
+    // but calling it here is fine as well for freshness on dashboard mount.
   }, []);
 
   const setActiveConference = (conference: Conference) => {
@@ -535,7 +524,7 @@ export default function Dashboard() {
       </div>
 
       {/* Body */}
-      {conferences.length > 0 && conference !== null ? (
+      {conferences && conferences.length > 0 && conference !== null ? (
         <ActiveDashboard
           conference={conference as Conference}
           onEdit={openEdit}
@@ -550,7 +539,6 @@ export default function Dashboard() {
           <ConferenceModal
             initial={editing ?? undefined}
             onClose={() => setShowModal(false)}
-            setConferences={setConferences}
           />
         )}
       </AnimatePresence>
