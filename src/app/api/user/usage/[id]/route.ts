@@ -1,36 +1,31 @@
 import { prisma } from "@/lib/prisma";
-import { User } from "@prisma/client";
-import { verify } from "jsonwebtoken";
-import { cookies } from "next/headers";
+import { withAuth, AuthUser } from "@/lib/auth";
+import { differenceInHours } from "date-fns";
 
-export async function GET(
-  req: Request,
-  { params }: { params: { id: string } },
-) {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("token");
+export const GET = withAuth(
+  async (
+    req: Request,
+    user: AuthUser,
+    { params }: { params: Promise<{ id: string }> },
+  ) => {
+    try {
+      const { id } = await params;
+      const userData = await prisma.user.findUnique({
+        where: {
+          id,
+        },
+        include: {
+          usage: true,
+        },
+      });
 
-    if (!token) return new Response("Unauthorized", { status: 401 });
-    const decoded: { id: string; user: User; name: string } = verify(
-      token.value,
-      process.env.JWT_SECRET as string,
-    ) as { id: string; user: User; name: string };
+      if (!userData) return new Response("Unauthorized", { status: 401 });
 
-    const { id } = await params;
-    const user = await prisma.user.findUnique({
-      where: {
-        id,
-      },
-      include: {
-        usage: true,
-      },
-    });
-
-    if (!user) return new Response("Unauthorized", { status: 401 });
-
-    return Response.json(user.usage);
-  } catch (error: any) {
-    return new Response(error, { status: 500 });
-  }
-}
+      return Response.json({ usage: userData.usage });
+    } catch (error: any) {
+      return new Response(error.message || "An unexpected error occurred", {
+        status: 500,
+      });
+    }
+  },
+);

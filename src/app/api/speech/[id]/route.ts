@@ -1,28 +1,12 @@
 import { prisma } from "@/lib/prisma";
-import { User } from "@prisma/client";
-import { verify } from "jsonwebtoken";
-import { cookies } from "next/headers";
-import { isEmpty } from "../../isEmpty";
+import { withAuth } from "@/lib/auth";
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export const GET = withAuth(async (req, user, { params }) => {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("token");
-    if (!token) return new Response("Unauthorized", { status: 401 });
-
-    const decoded: { id: string; user: User; name: string } = verify(
-      token.value,
-      process.env.JWT_SECRET as string,
-    ) as { id: string; user: User; name: string };
-    if (!decoded) return new Response("Unauthorized", { status: 401 });
-
     const { id } = await params;
-    const conference = await prisma.conference.findMany({
+    const conference = await prisma.conference.findUnique({
       where: {
-        authorId: decoded.id,
+        authorId: user.id,
         id,
       },
     });
@@ -31,7 +15,7 @@ export async function GET(
 
     const speeches = await prisma.speech.findMany({
       where: {
-        userId: decoded.id,
+        userId: user.id,
         conferenceId: id,
       },
     });
@@ -40,36 +24,23 @@ export async function GET(
       return new Response("No speeches found", { status: 404 });
     return Response.json({ speeches });
   } catch (error: any) {
-    return new Response(error, { status: 500 });
+    return new Response(error.message || "Internal Server Error", { status: 500 });
   }
-}
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+});
+
+export const POST = withAuth(async (req, user, { params }) => {
   try {
-    const cookieStore = await cookies();
-    const token = await cookieStore.get("token");
-
-    if (!token) return new Response("Unauthorized", { status: 401 });
-    const decoded: { id: string; user: User; name: string } = verify(
-      token.value,
-      process.env.JWT_SECRET as string,
-    ) as { id: string; user: User; name: string };
-
-    if (!decoded) return new Response("Unauthorized", { status: 401 });
-
     const { id } = await params;
 
     const conference = await prisma.conference.findUnique({
       where: { id },
     });
     if (!conference)
-      return new Response("Conferencen not found", { status: 404 });
+      return new Response("Conference not found", { status: 404 });
 
     const { title, content, topic } = await req.json();
 
-    if (!title || !content || !topic || isEmpty([title, content, topic]))
+    if (!title || !content || !topic)
       return new Response("Please Fill All Fields", { status: 400 });
 
     const speech = await prisma.speech.create({
@@ -77,7 +48,7 @@ export async function POST(
         title,
         content,
         conferenceId: id,
-        userId: decoded.id,
+        userId: user.id,
         topic,
       },
       include: {
@@ -88,30 +59,18 @@ export async function POST(
 
     return Response.json({ speech });
   } catch (error: any) {
-    return new Response(error, { status: 500 });
+    return new Response(error.message || "Internal Server Error", { status: 500 });
   }
-}
-export async function PUT(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+});
+
+export const PUT = withAuth(async (req, user, { params }) => {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("token");
-
-    if (!token) return new Response("Unauthorized", { status: 401 });
-    const decoded: { id: string; user: User; name: string } = verify(
-      token.value,
-      process.env.JWT_SECRET as string,
-    ) as { id: string; user: User; name: string };
-
-    if (!decoded) return new Response("Unauthorized", { status: 401 });
-
     const { id } = await params;
 
     const speech = await prisma.speech.findUnique({ where: { id } });
 
     if (!speech) return new Response("Speech not found", { status: 404 });
+    if (speech.userId !== user.id) return new Response("Unauthorized", { status: 401 });
 
     const { title, content } = await req.json();
 
@@ -133,6 +92,6 @@ export async function PUT(
 
     return Response.json({ speech: newSpeech });
   } catch (error: any) {
-    return new Response(error, { status: 500 });
+    return new Response(error.message || "Internal Server Error", { status: 500 });
   }
-}
+});

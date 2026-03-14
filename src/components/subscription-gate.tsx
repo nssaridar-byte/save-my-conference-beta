@@ -1,10 +1,24 @@
 "use client";
 
-import { useUsageStore, type UsageType, FREE_DAILY_LIMITS } from "@/hooks/use-usage";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  useUsageStore,
+  type UsageType,
+  FREE_DAILY_LIMITS,
+} from "@/hooks/use-usage";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Lock, Crown } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { UseUser } from "../../contexts/UserContext";
+import { differenceInHours } from "date-fns";
 
 const USAGE_LABELS: Record<UsageType, string> = {
   speeches: "speech analyses",
@@ -15,29 +29,50 @@ const USAGE_LABELS: Record<UsageType, string> = {
 
 export function withSubscriptionGate<P extends object>(
   WrappedComponent: React.ComponentType<P>,
-  actionType: UsageType
+  actionType: UsageType,
 ) {
   return function WithSubscriptionGate(props: P) {
-    const { isLimitReached, getRemainingToday } = useUsageStore();
+    const [isLimitReached, setIsLimitReached] = useState<boolean>(false);
     const [isGateOpen, setIsGateOpen] = useState(false);
-
-    const limitHit = isLimitReached(actionType);
-    const remaining = getRemainingToday(actionType);
+    const { user } = UseUser();
     const limit = FREE_DAILY_LIMITS[actionType];
 
+    const fetchLimit = () => {
+      axios
+        .get(`/api/user/usage/${user?.id}`)
+        .then((res) => {
+          const usage = res.data.usage;
+          const isReached =
+            usage &&
+            user?.role === "FREE" &&
+            usage.speechesCount >= 3 &&
+            usage.speechesLimitHitAt &&
+            differenceInHours(new Date(), new Date(usage.speechesLimitHitAt)) < 24;
+          setIsLimitReached(!!isReached);
+        })
+        .catch((err) => {
+          console.log(err);
+          alert("An error has occured");
+        });
+    };
     const handleClickWrapper = (e: React.MouseEvent) => {
-      if (limitHit) {
+      fetchLimit();
+      if (isLimitReached) {
         e.preventDefault();
         e.stopPropagation();
         setIsGateOpen(true);
       }
     };
 
+    useEffect(() => {
+      if (!user) return;
+      fetchLimit();
+    }, [user]);
     return (
       <>
         <div onClickCapture={handleClickWrapper} className="w-fit relative">
           <WrappedComponent {...props} />
-          {!limitHit && remaining <= 1 && remaining > 0 && (
+          {!isLimitReached && (
             <span className="absolute -top-1 -right-1 flex h-3 w-3">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-400" />
@@ -57,8 +92,12 @@ export function withSubscriptionGate<P extends object>(
                   Security Clearance Required
                 </DialogTitle>
                 <DialogDescription className="text-base mt-2 font-geist leading-relaxed">
-                  You've used all <strong className="text-foreground">{limit} {USAGE_LABELS[actionType]}</strong> available today on the Free tier.
-                  Upgrade to unlock unlimited access.
+                  You've used all{" "}
+                  <strong className="text-foreground">
+                    {limit} {USAGE_LABELS[actionType]}
+                  </strong>{" "}
+                  available today on the Free tier. Upgrade to unlock unlimited
+                  access.
                 </DialogDescription>
               </div>
             </div>
@@ -69,11 +108,17 @@ export function withSubscriptionGate<P extends object>(
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <Crown className="w-4 h-4 text-primary" />
-                    <h4 className="font-geist font-bold text-primary">Senior Diplomat (Pro)</h4>
+                    <h4 className="font-geist font-bold text-primary">
+                      Senior Diplomat (Pro)
+                    </h4>
                   </div>
-                  <p className="text-xs text-muted-foreground">Unlimited everything · $8/month · 3-day free trial</p>
+                  <p className="text-xs text-muted-foreground">
+                    Unlimited everything · $8/month · 3-day free trial
+                  </p>
                 </div>
-                <span className="text-2xl font-playfair font-black text-primary">$8</span>
+                <span className="text-2xl font-playfair font-black text-primary">
+                  $8
+                </span>
               </div>
 
               <DialogFooter className="flex-col gap-2 sm:flex-col">
@@ -91,7 +136,9 @@ export function withSubscriptionGate<P extends object>(
                 >
                   Continue on Free Tier
                 </Button>
-                <p className="text-xs text-center text-muted-foreground">Resets midnight tonight · No card required for trial</p>
+                <p className="text-xs text-center text-muted-foreground">
+                  Resets midnight tonight · No card required for trial
+                </p>
               </DialogFooter>
             </div>
           </DialogContent>
