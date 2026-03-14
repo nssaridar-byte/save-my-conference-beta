@@ -59,7 +59,6 @@ const StartButton = withSubscriptionGate(
 type Phase = "lobby" | "question" | "feedback" | "results";
 
 export default function QuizArena() {
-  const { incrementUsage } = useUsageStore();
   const [phase, setPhase] = useState<Phase>("lobby");
   const [currentQ, setCurrentQ] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
@@ -82,10 +81,12 @@ export default function QuizArena() {
   }, [user]);
   const fetchQuestions = async () => {
     setFetchingQuestions(true);
+    setQuestions([]);
     await axios
       .post(`/api/quiz/${conference?.id}`)
       .then((res) => {
         setQuestions(res.data.quizzes);
+
         console.log(res.data);
       })
       .catch((err) => {
@@ -113,6 +114,7 @@ export default function QuizArena() {
 
   const handleStart = async () => {
     await fetchQuestions();
+    fetchUsage();
     if (user) {
       setUser({
         ...user,
@@ -121,8 +123,6 @@ export default function QuizArena() {
           : null,
       });
     }
-    fetchUsage();
-    if (questions.length == 0) return;
     setPhase("question");
     setCurrentQ(0);
     setScore(0);
@@ -252,105 +252,106 @@ export default function QuizArena() {
           </motion.div>
         )}
 
-        {(phase === "question" || phase === "feedback") && (
-          <motion.div
-            key="question"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="flex flex-col gap-6"
-          >
-            {/* Progress + Shot Clock */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {questions.map((_, i) => (
-                  <div
-                    key={i}
-                    className={`h-2 rounded-full transition-all duration-300 ${i < currentQ ? "w-8 bg-primary" : i === currentQ ? "w-12 bg-primary" : "w-8 bg-border"}`}
-                  />
-                ))}
-                <span className="text-sm text-muted-foreground ml-2">
-                  Question {currentQ + 1} of {questions.length}
-                </span>
-              </div>
-              <div
-                className={`flex items-center gap-2 px-4 py-2 rounded-full font-mono font-bold text-lg border transition-colors ${timeLeft <= 10 ? "border-destructive/50 bg-destructive/10 text-destructive" : "border-border bg-card text-foreground"}`}
-              >
-                <Clock className="w-4 h-4" />
-                {timeLeft}s
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-primary/10 bg-card p-8 flex flex-col gap-6">
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20 flex items-center gap-1.5">
-                  {CATEGORY_ICONS[q.category]}
-                  {q.category}
-                </span>
-              </div>
-              <h3 className="font-playfair text-2xl font-bold text-foreground">
-                {q.question}
-              </h3>
-
-              <div className="grid grid-cols-1 gap-3 mt-2">
-                {q.options.map((opt: string, i: number) => {
-                  let style =
-                    "border-border bg-muted/20 hover:border-primary/50 hover:bg-primary/5 cursor-pointer";
-                  if (phase === "feedback") {
-                    if (i === q.correct)
-                      style =
-                        "border-green-500 bg-green-500/10 text-green-700 dark:text-green-400";
-                    else if (i === selected && i !== q.correct)
-                      style =
-                        "border-destructive bg-destructive/10 text-destructive";
-                    else style = "border-border bg-muted/10 opacity-50";
-                  }
-                  return (
-                    <button
+        {(phase === "question" || phase === "feedback") &&
+          questions.length > 0 && (
+            <motion.div
+              key="question"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col gap-6"
+            >
+              {/* Progress + Shot Clock */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {questions.map((_, i) => (
+                    <div
                       key={i}
-                      onClick={() => phase === "question" && handleSelect(i)}
-                      className={`w-full text-left p-5 rounded-2xl border-2 transition-all duration-200 font-geist flex items-center justify-between gap-4 ${style}`}
-                    >
-                      <span>{opt}</span>
-                      {phase === "feedback" && i === q.correct && (
-                        <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-                      )}
-                      {phase === "feedback" &&
-                        i === selected &&
-                        i !== q.correct && (
-                          <XCircle className="w-5 h-5 text-destructive shrink-0" />
-                        )}
-                    </button>
-                  );
-                })}
+                      className={`h-2 rounded-full transition-all duration-300 ${i < currentQ ? "w-8 bg-primary" : i === currentQ ? "w-12 bg-primary" : "w-8 bg-border"}`}
+                    />
+                  ))}
+                  <span className="text-sm text-muted-foreground ml-2">
+                    Question {currentQ + 1} of {questions.length}
+                  </span>
+                </div>
+                <div
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full font-mono font-bold text-lg border transition-colors ${timeLeft <= 10 ? "border-destructive/50 bg-destructive/10 text-destructive" : "border-border bg-card text-foreground"}`}
+                >
+                  <Clock className="w-4 h-4" />
+                  {timeLeft}s
+                </div>
               </div>
 
-              {phase === "feedback" && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="rounded-2xl border border-primary/20 bg-primary/5 p-5"
-                >
-                  <p className="font-semibold text-primary mb-1">
-                    📋 Diplomatic Note
-                  </p>
-                  <p className="text-foreground/80 text-sm leading-relaxed">
-                    {q.explanation}
-                  </p>
-                  <Button
-                    onClick={handleNext}
-                    className="mt-4 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+              <div className="rounded-3xl border border-primary/10 bg-card p-8 flex flex-col gap-6">
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20 flex items-center gap-1.5">
+                    {CATEGORY_ICONS[q.category]}
+                    {q.category}
+                  </span>
+                </div>
+                <h3 className="font-playfair text-2xl font-bold text-foreground">
+                  {q.question}
+                </h3>
+
+                <div className="grid grid-cols-1 gap-3 mt-2">
+                  {q.options.map((opt: string, i: number) => {
+                    let style =
+                      "border-border bg-muted/20 hover:border-primary/50 hover:bg-primary/5 cursor-pointer";
+                    if (phase === "feedback") {
+                      if (i === q.correct)
+                        style =
+                          "border-green-500 bg-green-500/10 text-green-700 dark:text-green-400";
+                      else if (i === selected && i !== q.correct)
+                        style =
+                          "border-destructive bg-destructive/10 text-destructive";
+                      else style = "border-border bg-muted/10 opacity-50";
+                    }
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => phase === "question" && handleSelect(i)}
+                        className={`w-full text-left p-5 rounded-2xl border-2 transition-all duration-200 font-geist flex items-center justify-between gap-4 ${style}`}
+                      >
+                        <span>{opt}</span>
+                        {phase === "feedback" && i === q.correct && (
+                          <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                        )}
+                        {phase === "feedback" &&
+                          i === selected &&
+                          i !== q.correct && (
+                            <XCircle className="w-5 h-5 text-destructive shrink-0" />
+                          )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {phase === "feedback" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="rounded-2xl border border-primary/20 bg-primary/5 p-5"
                   >
-                    {currentQ + 1 >= questions.length
-                      ? "View Results"
-                      : "Next Question"}
-                    <ChevronRight className="w-4 h-4 ml-1" />
-                  </Button>
-                </motion.div>
-              )}
-            </div>
-          </motion.div>
-        )}
+                    <p className="font-semibold text-primary mb-1">
+                      📋 Diplomatic Note
+                    </p>
+                    <p className="text-foreground/80 text-sm leading-relaxed">
+                      {q.explanation}
+                    </p>
+                    <Button
+                      onClick={handleNext}
+                      className="mt-4 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      {currentQ + 1 >= questions.length
+                        ? "View Results"
+                        : "Next Question"}
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </motion.div>
+                )}
+              </div>
+            </motion.div>
+          )}
 
         {phase === "results" && (
           <motion.div

@@ -57,14 +57,30 @@ export const POST = withAuth(
       });
 
       if (!conference) return new Response("Conference not found");
-      const quizes = await prisma.quiz.findMany({
+      const previousQuizzes = await prisma.quiz.findMany({
         where: {
           conferenceId: id,
+          userId: user.id,
         },
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 10,
         select: {
           questions: true,
         },
       });
+
+      const existingQuestions = previousQuizzes
+        .flatMap((q: any) => (Array.isArray(q.questions) ? q.questions : []))
+        .map((q: any) => q.question)
+        .filter(Boolean);
+
+      const exclusionList =
+        existingQuestions.length > 0
+          ? `\nMAKE SURE TO NOT INCLUDE ANY OF THE FOLLOWING QUESTIONS OR QUESTIONS SIMILAR TO THEM:\n${existingQuestions.map((q) => `- ${q}`).join("\n")}`
+          : "";
+
       const prompt = `You are an expert Model United Nations (MUN) Director and Educational Content Creator. Your task is to generate challenging, educational multiple-choice quiz questions based on the provided conference topic.
 
 CONFERENCE TOPIC:
@@ -76,6 +92,7 @@ REQUIREMENTS:
 3. Provide exactly 4 options for each question.
 4. The "correct" field must be the 0-based index of the correct answer in the "options" array (0, 1, 2, or 3).
 5. Provide a clear, educational explanation for why the answer is correct.
+${exclusionList}
 
 OUTPUT FORMAT:
 Return ONLY a valid JSON array of objects. Do not include markdown formatting, backticks, or conversational text.
@@ -91,13 +108,6 @@ JSON SCHEMA TO FOLLOW EXACTLY:
     "explanation": "String explaining the correct answer."
   }
 ]
-
-${
-  quizes.length > 0 &&
-  `MAKE SURE TO NOT INCLUDE ANY OF THE FOLLOWING QUESTIONS OR QUESTIONS SIMILLAR TO THEM:
-    ${quizes.map((quiz: any) => quiz.questions.map((q: any) => q.question))}
-  `
-}
 `;
 
       const res = ai.models.generateContent({
@@ -132,7 +142,7 @@ ${
 
       const quizzes = JSON.parse((await res).text as string);
       console.log(quizzes);
-      prisma.$transaction([
+      await prisma.$transaction([
         prisma.usage.upsert({
           where: {
             userId: user.id,

@@ -70,22 +70,23 @@ export function withSubscriptionGate<P extends object>(
             user?.subscription as Subscription,
           );
 
+          console.log("subscription valid: " + isSubscriptionValid);
+
           const reached =
-            user?.subscription?.status?.toLocaleLowerCase() == "inactive" &&
-            user?.role == "FREE" &&
-            usage &&
-            user?.role === "FREE" &&
-            !isSubscriptionValid &&
-            (type == "speeches"
-              ? usage.speechesCount
-              : type == "quizzes"
-                ? usage.quizzesCount
-                : type == "debates"
-                  ? usage.debatesCount
-                  : type == "crisis"
-                    ? usage.crisisCount
-                    : 5) >= limit &&
+            ((user?.role === "FREE" ||
+              !isSubscriptionValid ||
+              user?.subscription?.status?.toLocaleLowerCase() == "inactive") &&
+              (type == "speeches"
+                ? usage.speechesCount
+                : type == "quizzes"
+                  ? usage.quizzesCount
+                  : type == "debates"
+                    ? usage.debatesCount
+                    : type == "crisis"
+                      ? usage.crisisCount
+                      : 5) >= limit) ||
             timePassed < 24;
+
           console.log(reached);
 
           setIsLimitReached(reached);
@@ -94,9 +95,10 @@ export function withSubscriptionGate<P extends object>(
           console.log(err);
         });
     };
-    const handleClickWrapper = (e: React.MouseEvent) => {
-      if (!user) return;
-      fetchLimit();
+    const handleClickWrapper = async (e: React.MouseEvent) => {
+      await fetchLimit();
+      console.debug("has reached: " + isLimitReached);
+
       if (isLimitReached) {
         e.preventDefault();
         e.stopPropagation();
