@@ -1,10 +1,13 @@
 "use client";
 import { type Conference } from "@/hooks/use-conference";
 import { createContext, useContext, useEffect, useState } from "react";
+import axios from "axios";
 
 export interface TConferenceContext {
   conference: Conference | null;
   setConferenceContext: (conference: Conference | null) => void;
+  conferences: Conference[];
+  setConferences: (conferences: Conference[]) => void;
 }
 
 const conferenceContext = createContext<TConferenceContext | null>(null);
@@ -15,19 +18,49 @@ export function ConferenceProvider({
   children: React.ReactNode;
 }) {
   const [conference, setConferenceState] = useState<Conference | null>(null);
+  const [conferences, setConferencesState] = useState<Conference[]>([]);
+
   const setConference = (conference: Conference | null) => {
     setConferenceState(conference);
     sessionStorage.setItem("conference", JSON.stringify(conference));
+  };
+  const setConferences = (conferences: Conference[]) => {
+    setConferencesState(conferences);
+    sessionStorage.setItem("conferences", JSON.stringify(conferences));
+  };
+
+  const fetchConferences = async () => {
+    axios
+      .get("/api/conferences")
+      .then((res) => {
+        setConferences(res.data.conferences);
+        sessionStorage.setItem(
+          "conferences",
+          JSON.stringify(res.data.conferences),
+        );
+      })
+      .catch((err) => {
+        if (err.response.status == 404) {
+          setConferences([]);
+        }
+      });
   };
   useEffect(() => {
     const storedConference = sessionStorage.getItem("conference");
     if (storedConference) {
       setConferenceState(JSON.parse(storedConference));
     }
+    fetchConferences();
   }, []);
+
   return (
     <conferenceContext.Provider
-      value={{ conference, setConferenceContext: setConference }}
+      value={{
+        conference,
+        setConferenceContext: setConference,
+        conferences,
+        setConferences,
+      }}
     >
       {children}
     </conferenceContext.Provider>
