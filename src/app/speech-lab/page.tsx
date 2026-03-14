@@ -80,6 +80,7 @@ const AnalyzeButton = withSubscriptionGate(
     </Button>
   ),
   "speeches",
+  "speeches"
 );
 
 export default function SpeechLab() {
