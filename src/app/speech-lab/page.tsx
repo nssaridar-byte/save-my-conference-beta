@@ -163,6 +163,27 @@ export default function SpeechLab() {
     });
   };
 
+  const handleCreateSpeech = () => {
+    if (!conference || !conference.id) return;
+    axios
+      .post(`/api/speech/${conference.id}`, {
+        title: "Untitled Speech",
+        content: "Draft your speech here...",
+        topic: conference.topic || "General",
+      })
+      .then((res) => {
+        const newSpeech = res.data.speech;
+        setSpeeches((prev) => [newSpeech, ...prev]);
+        setSelectedSpeech(newSpeech);
+        setTitle(newSpeech.title);
+        setText(newSpeech.content);
+        setAnalysis(null);
+      })
+      .catch((err) => {
+        setError(err.response?.data || "Failed to create speech");
+      });
+  };
+
   const hasSpeechesDone = isHydrated && usage.speeches > 0;
 
   if (conference == null) {
@@ -181,7 +202,10 @@ export default function SpeechLab() {
           </p>
         </div>
         {hasSpeechesDone && (
-          <Button className="rounded-full px-6 bg-foreground text-background hover:bg-foreground/90 font-geist">
+          <Button
+            onClick={handleCreateSpeech}
+            className="rounded-full px-6 bg-foreground text-background hover:bg-foreground/90 font-geist"
+          >
             <Plus className="w-4 h-4 mr-2" />
             New Speech
           </Button>
@@ -463,7 +487,10 @@ export default function SpeechLab() {
                   editing.
                 </p>
               </div>
-              <Button className="rounded-full px-6 bg-primary text-primary-foreground hover:bg-primary/90 mt-2">
+              <Button
+                onClick={handleCreateSpeech}
+                className="rounded-full px-6 bg-primary text-primary-foreground hover:bg-primary/90 mt-2"
+              >
                 <Plus className="w-4 h-4 mr-2" /> Create First Speech
               </Button>
             </div>
