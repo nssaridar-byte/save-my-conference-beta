@@ -14,6 +14,7 @@ import {
   Mail,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 
 import {
   Sidebar,
@@ -74,7 +75,12 @@ const items = [
 
 function LogoutButton() {
   const router = useRouter();
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await axios.post("/api/logout");
+    } catch (e) {
+      console.error("Logout cookie clear failed:", e);
+    }
     sessionStorage.clear();
     localStorage.clear();
     window.location.href = "/login";
