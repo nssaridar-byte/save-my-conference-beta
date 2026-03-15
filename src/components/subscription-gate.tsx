@@ -70,25 +70,33 @@ export function withSubscriptionGate<P extends object>(
             user?.subscription as Subscription,
           );
 
-          console.log("subscription valid: " + isSubscriptionValid);
+          const currentCount =
+            type == "speeches"
+              ? usage.speechesCount
+              : type == "quizzes"
+                ? usage.quizzesCount
+                : type == "debates"
+                  ? usage.debatesCount
+                  : type == "crisis"
+                    ? usage.crisisCount
+                    : 4;
+
+          const countReached = currentCount >= limit;
 
           const reached =
-            ((user?.role === "FREE" ||
-              !isSubscriptionValid ||
-              user?.subscription?.status?.toLocaleLowerCase() == "inactive") &&
-              (type == "speeches"
-                ? usage.speechesCount
-                : type == "quizzes"
-                  ? usage.quizzesCount
-                  : type == "debates"
-                    ? usage.debatesCount
-                    : type == "crisis"
-                      ? usage.crisisCount
-                      : 5) >= limit) ||
-            timePassed < 24;
+            user?.role === "FREE" ||
+            !isSubscriptionValid ||
+            user?.subscription?.status?.toLocaleLowerCase() == "inactive"
+              ? countReached && timePassed < 24
+              : false;
 
-          console.log(reached);
-
+          console.log({
+            countReached,
+            reached,
+            limit,
+            timePassed,
+            count: currentCount,
+          });
           setIsLimitReached(reached);
         })
         .catch((err) => {

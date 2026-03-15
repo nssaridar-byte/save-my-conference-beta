@@ -19,7 +19,9 @@ export async function POST(req: Request) {
 
     if (userCheck) return new Response("Email taken", { status: 409 });
 
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCode = Math.floor(
+      100000 + Math.random() * 900000,
+    ).toString();
 
     const user = await prisma.user.create({
       data: {
@@ -32,12 +34,15 @@ export async function POST(req: Request) {
 
     await sendVerificationCode(email, verificationCode);
 
-    return Response.json({ 
+    return Response.json({
       message: "Verification email sent",
-      user: { id: user.id, email: user.email, name: user.name } 
+      user: { id: user.id, email: user.email, name: user.name },
     });
   } catch (error: any) {
     console.error("Signup catastrophic error:", error);
-    return Response.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    return Response.json(
+      { error: error.message || "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

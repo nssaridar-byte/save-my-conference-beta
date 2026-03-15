@@ -4,6 +4,9 @@ import { isPast } from "date-fns";
 import { prisma } from "./prisma";
 
 export async function subscriptionValid(subscription: Subscription) {
+  console.log(subscription);
+
+  if (!subscription) return;
   let newSubscription: Subscription = subscription;
 
   // If the current period end is in the past and the status is active, update the status to inactive

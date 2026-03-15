@@ -20,24 +20,6 @@ const item: Variants = {
   },
 };
 
-const EVENTS = [
-  {
-    severity: "HIGH",
-    text: "Satellite telemetry indicates unexpected military movement near the 38th parallel.",
-    region: "East Asia",
-  },
-  {
-    severity: "MEDIUM",
-    text: "European markets plunge 4% amidst reports of imminent trade embargo.",
-    region: "Europe",
-  },
-  {
-    severity: "CRITICAL",
-    text: "Massive blackout in regional capital city following suspected coordinated cyberattack.",
-    region: "Eastern Europe",
-  },
-];
-
 const DIRECTIVES_LOG = [
   {
     time: "14:32",
@@ -68,19 +50,24 @@ export default function CrisisSimulator() {
   const [currentEvent, setCurrentEvent] = useState(0);
   const [directive, setDirective] = useState("");
   const [submitted, setSubmitted] = useState(false);
-  const [score, setScore] = useState<number | null>(null);
+  const [score, setScore] = useState<string | null>(null);
   const [events, setEvents] = useState<TEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState<boolean>(false);
+  const [fetchingResults, setFetchingResults] = useState<boolean>(false);
   const [limitReached, setLimitReached] = useState<boolean>(false);
+  const [results, setResults] = useState<any>(null);
   const { conference } = UseConference();
+
   const fetchEvents = () => {
     setEventsLoading(true);
+    const crisis = sessionStorage.getItem("crisis");
+    if (crisis) return;
     axios
       .get(`/api/crisis/${conference?.id}`)
       .then((res) => {
         console.log(res.data);
-
         setEvents(res.data.crisis);
+        sessionStorage.setItem("crisis", JSON.stringify(res.data.crisis));
       })
       .catch((err) => {
         if (err.response.status == 403) {
@@ -90,25 +77,49 @@ export default function CrisisSimulator() {
       .finally(() => setEventsLoading(false));
   };
   useEffect(() => {
+    const crisis = sessionStorage.getItem("crisis");
+    if (crisis) {
+      setEvents(JSON.parse(crisis));
+    }
+  }, []);
+  useEffect(() => {
+    if (events.length === 0) return;
     const timer = setInterval(
-      () => setCurrentEvent((p) => (p + 1) % EVENTS.length),
+      () => setCurrentEvent((p) => (isNaN(p) ? 0 : (p + 1) % events.length)),
       10000,
     );
     return () => clearInterval(timer);
-  }, []);
+  }, [events.length]);
+  useEffect(() => {
+    if (
+      events.length > 0 &&
+      (isNaN(currentEvent) || currentEvent >= events.length)
+    ) {
+      setCurrentEvent(0);
+    }
+  }, [events, currentEvent]);
+
   useEffect(() => {
     if (!conference) return;
     fetchEvents();
   }, [conference]);
   const handleSubmit = () => {
     if (!directive.trim()) return;
-    const mockScore = Math.floor(Math.random() * 25) + 70;
-    setScore(mockScore);
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      setDirective("");
-    }, 4000);
+    setFetchingResults(true);
+    axios
+      .post(`/api/crisis/${conference?.id}`, {
+        crisis: events,
+        response: directive,
+      })
+      .then((res) => {
+        setResults(res.data.feedback);
+        setScore(res.data.feedback.overall_grade);
+        setSubmitted(true);
+      })
+      .catch((err) => {
+        alert("There was an error");
+      })
+      .finally(() => setFetchingResults(false));
   };
 
   const evt = events[currentEvent];
@@ -136,7 +147,7 @@ export default function CrisisSimulator() {
             <h1>Limit Reached</h1>
           </motion.div>
         )}
-        {events.length > 0 ? (
+        {events.length > 0 && evt ? (
           <motion.div
             key={currentEvent}
             initial={{ opacity: 0, y: -8 }}
@@ -243,7 +254,12 @@ export default function CrisisSimulator() {
               disabled={!directive.trim() || submitted}
               className="rounded-full px-6 bg-primary text-primary-foreground hover:bg-primary/90 shrink-0"
             >
-              Execute Directive <ChevronRight className="w-4 h-4 ml-1" />
+              {fetchingResults == true
+                ? "Consulting Chairs..."
+                : "Execute Directive"}{" "}
+              <ChevronRight
+                className={`w-4 h-4 ml-1 ${fetchingResults ? "animate-pulse" : ""}`}
+              />
             </Button>
           </div>
 
@@ -262,74 +278,127 @@ export default function CrisisSimulator() {
               </motion.div>
             )}
           </AnimatePresence>
-          {/* Log */}
-          {DIRECTIVES_LOG.length > 0 && (
-            <div className="border-t border-border/50 pt-4 flex flex-col gap-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Directive Log
-              </p>
-              {DIRECTIVES_LOG.map((d, i) => (
-                <div key={i} className="flex items-start gap-3 text-sm">
-                  <span className="font-mono text-xs text-muted-foreground shrink-0 mt-0.5">
-                    {d.time}
-                  </span>
-                  <span className="text-foreground/80 flex-1 whitespace-normal wrap-break-word">
-                    {d.text}
-                  </span>
-                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-secondary text-muted-foreground font-medium shrink-0">
-                    {d.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
         </motion.div>
 
-        {/* Global Impact Score */}
+        {/* Strategic Analysis & Outcomes */}
         <motion.div
           variants={item}
-          className="rounded-3xl border border-primary/10 bg-card shadow-sm p-8 flex flex-col items-center justify-center text-center gap-5"
+          className="md:col-span-3 grid grid-cols-1 lg:grid-cols-3 gap-6"
         >
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <Shield className="w-6 h-6 text-primary" />
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">
-              Global Impact Score
-            </p>
-            <AnimatePresence mode="wait">
-              {score ? (
-                <motion.p
-                  key={score}
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="text-7xl font-playfair font-black text-primary mt-2"
-                >
-                  {score}
-                </motion.p>
-              ) : (
-                <motion.p
-                  key="dash"
-                  className="text-7xl font-playfair font-black text-muted-foreground/30 mt-2"
-                >
-                  —
-                </motion.p>
-              )}
-            </AnimatePresence>
-          </div>
-          <p className="text-sm text-muted-foreground max-w-[160px] leading-relaxed">
-            {score
-              ? "Directive impact assessed by the Dias."
-              : "Awaiting directive submission and evaluation."}
-          </p>
-          {score && (
-            <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${score}%` }}
-                className="h-full bg-primary rounded-full"
-              />
-            </div>
+          {results && (
+            <>
+              {/* Event Outcomes */}
+              <div className="lg:col-span-2 space-y-6">
+                <div className="rounded-3xl border border-border bg-card p-8">
+                  <h3 className="text-xl font-playfair font-bold mb-6 flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-primary" />
+                    Operational Outcomes
+                  </h3>
+                  <div className="grid gap-4">
+                    {results.event_outcomes?.map((outcome: any, i: number) => (
+                      <div
+                        key={i}
+                        className="p-4 rounded-2xl bg-muted/30 border border-border/50 flex flex-col sm:flex-row sm:items-center gap-4 items-center justify-center "
+                      >
+                        <div className="shrink-0 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest">
+                          Crisis {outcome.event_id}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-foreground">
+                            {outcome.status}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {outcome.impact_note}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {/* Strengths */}
+                  <div className="rounded-3xl border border-green-500/20 bg-green-500/5 p-8">
+                    <h4 className="text-sm font-bold uppercase tracking-widest text-green-600 dark:text-green-400 mb-4 flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4" /> Strategic Strengths
+                    </h4>
+                    <ul className="space-y-3">
+                      {results.feedback?.strengths?.map(
+                        (s: string, i: number) => (
+                          <li
+                            key={i}
+                            className="text-sm text-foreground flex gap-2"
+                          >
+                            <span className="text-green-500">•</span> {s}
+                          </li>
+                        ),
+                      )}
+                    </ul>
+                  </div>
+
+                  {/* Weaknesses */}
+                  <div className="rounded-3xl border border-destructive/20 bg-destructive/5 p-8">
+                    <h4 className="text-sm font-bold uppercase tracking-widest text-destructive mb-4 flex items-center gap-2">
+                      <Zap className="w-4 h-4" /> Areas for Improvement
+                    </h4>
+                    <ul className="space-y-3">
+                      {results.feedback?.weaknesses?.map(
+                        (w: string, i: number) => (
+                          <li
+                            key={i}
+                            className="text-sm text-foreground flex gap-2"
+                          >
+                            <span className="text-destructive">•</span> {w}
+                          </li>
+                        ),
+                      )}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Situation Briefing */}
+              <div className="space-y-6">
+                <div className="rounded-3xl border border-primary/20 bg-primary/5 p-8 h-full flex flex-col">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-playfair font-bold">
+                      Official Briefing
+                    </h3>
+                    <div className="text-3xl font-black text-primary font-playfair">
+                      {score}
+                    </div>
+                  </div>
+
+                  <div className="flex-1">
+                    <p className="text-sm leading-relaxed text-foreground/90 font-medium bg-background/50 p-4 rounded-2xl border border-primary/10 mb-6 italic">
+                      "{results.in_character_briefing}"
+                    </p>
+
+                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                      <h5 className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-2">
+                        Director's Strategic Tip
+                      </h5>
+                      <p className="text-xs text-foreground leading-relaxed">
+                        {results.feedback?.strategic_tip}
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setResults(null);
+                      setSubmitted(false);
+                      setScore(null);
+                      setDirective("");
+                    }}
+                    className="mt-8 rounded-full border-primary/20 hover:bg-primary/5"
+                  >
+                    Reset Simulation
+                  </Button>
+                </div>
+              </div>
+            </>
           )}
         </motion.div>
       </motion.div>

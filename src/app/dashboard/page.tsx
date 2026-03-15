@@ -484,19 +484,6 @@ export default function Dashboard() {
     // but calling it here is fine as well for freshness on dashboard mount.
   }, []);
 
-  const setActiveConference = (conference: Conference) => {
-    setActiveIdState(conference.id);
-    setConferenceContext(conference);
-    axios
-      .post(`/api/conferences/active/${conference.id}`, {})
-      .then((res) => {})
-      .catch((err) => {
-        console.log(err);
-        setActiveIdState("");
-        setConferenceContext(null);
-      });
-  };
-  useEffect(() => {}, []);
   return (
     <div className="flex flex-col gap-8 pb-8">
       {/* Header */}
@@ -511,7 +498,6 @@ export default function Dashboard() {
               : "Set up your first conference to get started."}
           </p>
         </div>
-
         <div className="flex items-center gap-3">
           <Button
             onClick={openCreate}
