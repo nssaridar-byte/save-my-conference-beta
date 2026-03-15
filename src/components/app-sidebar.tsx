@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   FileText,
   Home,
@@ -93,8 +94,18 @@ function LogoutButton() {
 
 import { Logo } from "@/components/logo";
 
+import { UseUser } from "../../contexts/UserContext";
+
 export function AppSidebar() {
   const pathname = usePathname();
+  const { user } = UseUser();
+  const isAdmin = user?.role === "ADMIN";
+
+  const filteredItems = items.filter(item => {
+    if (item.title === "Admin Panel") return isAdmin;
+    return true;
+  });
+
   return (
     <Sidebar variant="inset" collapsible="icon">
       <SidebarContent>
@@ -105,7 +116,7 @@ export function AppSidebar() {
           <SidebarGroupLabel className="font-geist">Modules</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => {
+              {filteredItems.map((item) => {
                 const isActive = pathname.startsWith(item.url);
                 return (
                   <SidebarMenuItem key={item.title}>

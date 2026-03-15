@@ -1,5 +1,6 @@
 import { verify } from "jsonwebtoken";
 import { cookies } from "next/headers";
+import { prisma } from "./prisma";
 
 export interface AuthUser {
   id: string;
@@ -23,12 +24,6 @@ export function withAuth(
         return new Response("Invalid session", { status: 401 });
       }
 
-      // Optional: If you want to block all API access for unverified users
-      // const userFromDb = await prisma.user.findUnique({ where: { id: decoded.id } });
-      // if (!userFromDb?.emailVerified) {
-      //   return new Response("Email not verified", { status: 403 });
-      // }
-
       const user: AuthUser = { id: decoded.id };
 
       return handler(req, user, context);
@@ -37,4 +32,25 @@ export function withAuth(
       return new Response("Session expired or invalid", { status: 401 });
     }
   };
+}
+
+export function withAdmin(
+  handler: (req: Request, user: AuthUser, context: { params: Promise<any> }) => Promise<Response>
+) {
+  return withAuth(async (req, user, context) => {
+    try {
+      const userFromDb = await prisma.user.findUnique({
+        where: { id: user.id },
+      });
+
+      if (!userFromDb || userFromDb.role !== "ADMIN") {
+        return new Response("Forbidden: Admin access required", { status: 403 });
+      }
+
+      return handler(req, user, context);
+    } catch (error) {
+      console.error("Admin Auth Error:", error);
+      return new Response("Internal Server Error", { status: 500 });
+    }
+  });
 }

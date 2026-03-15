@@ -1,9 +1,12 @@
 "use client";
 
-import { motion, type Variants } from "framer-motion";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { motion, type Variants, AnimatePresence } from "framer-motion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Users, Crown, Activity, Search, ShieldAlert } from "lucide-react";
+import { TrendingUp, Users, Crown, Activity, Search, ShieldAlert, Loader2, AlertCircle } from "lucide-react";
+import Error from "@/components/Error";
 
 const container: Variants = {
   hidden: { opacity: 0 },
@@ -14,27 +17,126 @@ const item: Variants = {
   show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } },
 };
 
-const STATS = [
-  { label: "Total MRR", value: "$1,280", delta: "+12% this month", icon: TrendingUp, color: "text-green-500" },
-  { label: "Active Delegates", value: "342", delta: "+8 this week", icon: Users, color: "text-primary" },
-  { label: "Pro Subscribers", value: "160", delta: "46.7% conversion", icon: Crown, color: "text-primary" },
-  { label: "System Status", value: "Nominal", delta: "All systems operational", icon: Activity, color: "text-green-500" },
-];
-
 const ROLE_STYLES: Record<string, string> = {
   PRO: "bg-primary/10 text-primary border-primary/20",
   ADMIN: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
   FREE: "bg-secondary text-muted-foreground border-border",
 };
 
-const mockUsers = [
-  { id: "1", name: "Alice Delegate", email: "alice@example.com", role: "PRO", status: "Active", usage: "12 speeches" },
-  { id: "2", name: "Bob Representative", email: "bob@example.com", role: "FREE", status: "Active", usage: "1/2 speeches" },
-  { id: "3", name: "Charlie Admin", email: "charlie@example.com", role: "ADMIN", status: "Active", usage: "Unlimited" },
-  { id: "4", name: "Diana Minister", email: "diana@example.com", role: "FREE", status: "Suspended", usage: "2/2 speeches" },
-];
+interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  usage: string;
+}
+
+interface AdminStat {
+  label: string;
+  value: string;
+  delta: string;
+  icon: any;
+  color: string;
+}
+
+const ICON_MAP: Record<string, any> = {
+  TrendingUp,
+  Users,
+  Crown,
+  Activity
+};
 
 export default function AdminDashboard() {
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [stats, setStats] = useState<AdminStat[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+
+  const fetchData = async () => {
+    try {
+      const [usersRes, statsRes] = await Promise.all([
+        axios.get("/api/admin/users"),
+        axios.get("/api/admin/stats")
+      ]);
+      setUsers(usersRes.data.users);
+      setStats(statsRes.data.stats.map((s: any) => ({
+        ...s,
+        icon: ICON_MAP[s.icon] || Activity
+      })));
+    } catch (err: any) {
+      setError(err.response?.data || err.message || "Failed to fetch admin data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleUpdateRole = async (userId: string, currentRole: string) => {
+    const newRole = currentRole === "PRO" ? "FREE" : "PRO";
+    try {
+      await axios.patch(`/api/admin/users/${userId}`, { role: newRole });
+      setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
+      // Refresh stats as well since MRR/Pro count changed
+      const statsRes = await axios.get("/api/admin/stats");
+      setStats(statsRes.data.stats.map((s: any) => ({
+        ...s,
+        icon: ICON_MAP[s.icon] || Activity
+      })));
+    } catch (err: any) {
+      alert(err.response?.data || "Failed to update role");
+    }
+  };
+
+  const filteredUsers = users.filter(u => 
+    u.name.toLowerCase().includes(search.toLowerCase()) || 
+    u.email.toLowerCase().includes(search.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        <p className="text-muted-foreground font-geist animate-pulse">Establishing Command Access...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    const isForbidden = error.includes("Forbidden") || error.includes("403") || error.includes("access required");
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-6 p-8 text-center bg-destructive/5 rounded-3xl border border-destructive/10">
+        <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
+          <AlertCircle className="w-8 h-8 text-destructive" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-playfair font-bold text-foreground mb-2">
+            {isForbidden ? "Restricted Area" : "Access Denied"}
+          </h2>
+          <p className="text-muted-foreground max-w-sm">
+            {isForbidden 
+              ? "You do not have the required security clearance to view this command center. Please contact a system administrator if you believe this is an error."
+              : error}
+          </p>
+        </div>
+        <div className="flex gap-4">
+          <Button onClick={() => window.location.reload()} variant="outline" className="rounded-full">
+            Retry Connection
+          </Button>
+          {isForbidden && (
+            <Button onClick={() => window.location.href = "/dashboard"} className="rounded-full">
+              Back to Dashboard
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-8 pb-8">
       <div className="flex items-center gap-4">
@@ -50,7 +152,7 @@ export default function AdminDashboard() {
       <motion.div variants={container} initial="hidden" animate="show" className="flex flex-col gap-6">
         {/* Stats */}
         <motion.div variants={item} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {STATS.map((s) => (
+          {stats.map((s) => (
             <div key={s.label} className="rounded-3xl border border-primary/10 bg-card shadow-sm p-7 flex flex-col justify-between gap-4 group hover:border-primary/30 transition-colors">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">{s.label}</span>
@@ -76,6 +178,8 @@ export default function AdminDashboard() {
               <input
                 type="search"
                 placeholder="Search delegates..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 rounded-full border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
@@ -93,43 +197,56 @@ export default function AdminDashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockUsers.map((user) => (
-                  <TableRow key={user.id} className="border-border/50 hover:bg-muted/20 transition-colors">
-                    <TableCell className="font-medium pl-8">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-playfair font-bold text-sm shrink-0">
-                          {user.name[0]}
+                <AnimatePresence>
+                  {filteredUsers.map((user) => (
+                    <TableRow key={user.id} className="border-border/50 hover:bg-muted/20 transition-colors">
+                      <TableCell className="font-medium pl-8">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-playfair font-bold text-sm shrink-0">
+                            {user.name[0]}
+                          </div>
+                          {user.name}
                         </div>
-                        {user.name}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${ROLE_STYLES[user.role]}`}>
-                        {user.role}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground font-mono">{user.usage}</TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${user.status === "Active" ? "text-green-600 dark:text-green-400" : "text-destructive"}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${user.status === "Active" ? "bg-green-500" : "bg-destructive"}`} />
-                        {user.status}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right pr-8">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button variant="outline" size="sm" className="rounded-full border-primary/30 text-primary hover:bg-primary/10 text-xs">
-                          {user.role === "FREE" ? "Grant Pro" : "Revoke Pro"}
-                        </Button>
-                        <Button variant="ghost" size="sm" className="rounded-full text-destructive hover:bg-destructive/10 hover:text-destructive text-xs">
-                          {user.status === "Active" ? "Suspend" : "Restore"}
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${ROLE_STYLES[user.role] || ROLE_STYLES.FREE}`}>
+                          {user.role}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground font-mono">{user.usage}</TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${user.status === "Active" ? "text-green-600 dark:text-green-400" : "text-destructive"}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${user.status === "Active" ? "bg-green-500" : "bg-destructive"}`} />
+                          {user.status}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right pr-8">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleUpdateRole(user.id, user.role)}
+                            disabled={user.role === "ADMIN"}
+                            className="rounded-full border-primary/30 text-primary hover:bg-primary/10 text-xs"
+                          >
+                            {user.role === "FREE" ? "Grant Pro" : user.role === "PRO" ? "Revoke Pro" : "Admin Override"}
+                          </Button>
+                          <Button variant="ghost" size="sm" className="rounded-full text-destructive hover:bg-destructive/10 hover:text-destructive text-xs">
+                            {user.status === "Active" ? "Suspend" : "Restore"}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </AnimatePresence>
               </TableBody>
             </Table>
+            {filteredUsers.length === 0 && (
+              <div className="p-12 text-center">
+                <p className="text-muted-foreground">No delegates found matching your criteria.</p>
+              </div>
+            )}
           </div>
         </motion.div>
       </motion.div>
