@@ -31,7 +31,11 @@ export const POST = withAuth(async (req, user, { params }) => {
       },
     });
 
+    console.log(
+      "subscroption: " + fullUser.subscription && fullUser.subscription,
+    );
     // Check if usage exists and if the user is on the free tier (no subscription or invalid subscription)
+
     const isPro =
       fullUser.subscription &&
       (await subscriptionValid(
@@ -67,7 +71,7 @@ export const POST = withAuth(async (req, user, { params }) => {
       return new Response("Unauthorized", { status: 401 });
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
+      model: "gemini-3-flash-preview",
       contents: `You are an expert Model United Nations (MUN) Chairperson and experienced debate adjudicator. Your task is to evaluate a delegate's speech transcript objectively and consistently.
       
 EVALUATION RUBRIC:
@@ -144,6 +148,8 @@ JSON STRUCTURE:
     ]);
     return Response.json(analysis);
   } catch (error: any) {
+    console.log(error);
+
     return new Response(error.message || "Internal Server Error", {
       status: 500,
     });

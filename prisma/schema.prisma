@@ -95,8 +95,16 @@ model Conference {
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   speeches  Speech[]
   quizes    Quiz[]
+  crisis    Crisis[]
 }
-
+model Crisis {
+  id String @id @default(cuid())
+  conferenceId String
+  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  events Json?
+  response String?
+  createdAt DateTime @default(now())
+}
 enum Role {
   FREE
   PRO

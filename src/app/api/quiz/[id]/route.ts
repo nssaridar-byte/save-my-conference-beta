@@ -114,7 +114,7 @@ JSON SCHEMA TO FOLLOW EXACTLY:
 `;
 
       const res = ai.models.generateContent({
-        model: "gemini-2.5-flash-lite",
+        model: "gemini-3-flash-preview",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
