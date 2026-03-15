@@ -28,15 +28,17 @@ export const POST = withAuth(
         },
       });
       if (!userObj) return new Response("Unauthorized", { status: 401 });
+
+      // The user has a pro subscription if the user subscription is valid
       const isPro =
         userObj.subscription &&
         (await subscriptionValid(
           userObj.subscription as unknown as Subscription,
         ));
+      // Check if the user doesn't have (the pro subscription or if he is on the free tier ) and that he has accumalated some usage
 
-      console.log("pro: " + isPro);
-
-      if (!isPro && usage && userObj.role == "FREE") {
+      if ((!isPro || userObj.role == "FREE") && usage) {
+        // If the usage count including the one he is making is equal to the limit, update the limit hit at but still allow it to pass through
         if (usage.quizzesCount + 1 == 5) {
           await prisma.usage.update({
             where: {
@@ -47,6 +49,7 @@ export const POST = withAuth(
             },
           });
         }
+        // If the speechesCount is more than or equal to 3, throw an error
         if (usage.quizzesCount >= 5)
           return new Response("Usage limit reached", { status: 403 });
       }
