@@ -73,10 +73,16 @@ const items = [
 
 function LogoutButton() {
   const router = useRouter();
+  const handleLogout = () => {
+    sessionStorage.clear();
+    localStorage.clear();
+    window.location.href = "/login";
+  };
+
   return (
     <SidebarMenuButton
       tooltip="Log Out"
-      onClick={() => router.push("/login")}
+      onClick={handleLogout}
       className="text-destructive hover:bg-destructive/10 hover:text-destructive"
     >
       <LogOut className="w-4 h-4" />

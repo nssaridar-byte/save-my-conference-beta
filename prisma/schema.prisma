@@ -20,6 +20,7 @@ model User {
   conferences      Conference[]
   files            File[]
   speeches         Speech[]
+  quizes           Quiz[]
   subscription     Subscription?
   usage            Usage?
 }
@@ -62,7 +63,15 @@ model Speech {
   conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
-
+model Quiz {
+  id String @id @default(cuid())
+  conferenceId String
+  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  questions Json?
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
 model File {
   id        String   @id @default(cuid())
   userId    String
@@ -85,6 +94,7 @@ model Conference {
   topic     String
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   speeches  Speech[]
+  quizes    Quiz[]
 }
 
 enum Role {

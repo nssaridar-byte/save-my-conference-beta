@@ -18,7 +18,9 @@ import { Lock, Crown } from "lucide-react";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { UseUser } from "../../contexts/UserContext";
-import { differenceInHours } from "date-fns";
+import { differenceInDays, differenceInHours } from "date-fns";
+import { subscriptionValid } from "@/lib/subscription";
+import { Subscription } from "@prisma/client";
 
 const USAGE_LABELS: Record<UsageType, string> = {
   speeches: "speech analyses",
@@ -29,6 +31,7 @@ const USAGE_LABELS: Record<UsageType, string> = {
 
 export function withSubscriptionGate<P extends object>(
   WrappedComponent: React.ComponentType<P>,
+  type: UsageType,
   actionType: UsageType,
 ) {
   return function WithSubscriptionGate(props: P) {
@@ -36,27 +39,66 @@ export function withSubscriptionGate<P extends object>(
     const [isGateOpen, setIsGateOpen] = useState(false);
     const { user } = UseUser();
     const limit = FREE_DAILY_LIMITS[actionType];
-
     const fetchLimit = () => {
       axios
         .get(`/api/user/usage/${user?.id}`)
-        .then((res) => {
+        .then(async (res) => {
+          console.log(res.data);
+          const timePassed =
+            res.data.usage &&
+            (type == "quizzes"
+              ? res.data.usage.quizzesLimitHitAt &&
+                differenceInHours(new Date(), res.data.usage.quizzesLimitHitAt)
+              : type == "crisis"
+                ? res.data.usage.crisisLimitHitAt &&
+                  differenceInHours(new Date(), res.data.usage.crisisLimitHitAt)
+                : type == "debates"
+                  ? res.data.usage.debatesLimitHitAt &&
+                    differenceInHours(
+                      new Date(),
+                      res.data.usage.debatesLimitHitAt,
+                    )
+                  : type == "speeches"
+                    ? res.data.usage.speechesLimitHitAt &&
+                      differenceInHours(
+                        new Date(),
+                        res.data.usage.speechesLimitHitAt,
+                      )
+                    : 25);
           const usage = res.data.usage;
-          const isReached =
-            usage &&
-            user?.role === "FREE" &&
-            usage.speechesCount >= 3 &&
-            usage.speechesLimitHitAt &&
-            differenceInHours(new Date(), new Date(usage.speechesLimitHitAt)) < 24;
-          setIsLimitReached(!!isReached);
+          const isSubscriptionValid = await subscriptionValid(
+            user?.subscription as Subscription,
+          );
+
+          console.log("subscription valid: " + isSubscriptionValid);
+
+          const reached =
+            ((user?.role === "FREE" ||
+              !isSubscriptionValid ||
+              user?.subscription?.status?.toLocaleLowerCase() == "inactive") &&
+              (type == "speeches"
+                ? usage.speechesCount
+                : type == "quizzes"
+                  ? usage.quizzesCount
+                  : type == "debates"
+                    ? usage.debatesCount
+                    : type == "crisis"
+                      ? usage.crisisCount
+                      : 5) >= limit) ||
+            timePassed < 24;
+
+          console.log(reached);
+
+          setIsLimitReached(reached);
         })
         .catch((err) => {
           console.log(err);
-          alert("An error has occured");
         });
     };
-    const handleClickWrapper = (e: React.MouseEvent) => {
-      fetchLimit();
+    const handleClickWrapper = async (e: React.MouseEvent) => {
+      await fetchLimit();
+      console.debug("has reached: " + isLimitReached);
+
       if (isLimitReached) {
         e.preventDefault();
         e.stopPropagation();

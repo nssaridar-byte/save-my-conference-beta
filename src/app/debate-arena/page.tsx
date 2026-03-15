@@ -31,7 +31,10 @@ const RebuttalButton = withSubscriptionGate(({ onClick }: { onClick: () => void 
     <Sparkles className="w-4 h-4 mr-2" />
     Generate Rebuttal
   </Button>
-), "debates");
+),
+  "debates",
+  "debates"
+);
 
 export default function DebateArena() {
   const [activeTab, setActiveTab] = useState<"tracker" | "gsl">("tracker");

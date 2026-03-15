@@ -491,8 +491,9 @@ export default function Settings() {
               variant="outline"
               className="rounded-full border-destructive/40 text-destructive hover:bg-destructive hover:text-destructive-foreground gap-2"
               onClick={() => {
-                router.push("/login");
                 sessionStorage.clear();
+                localStorage.clear();
+                window.location.href = "/login";
               }}
             >
               <LogOut className="w-4 h-4" />
