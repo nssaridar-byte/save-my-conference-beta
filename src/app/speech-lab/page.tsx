@@ -145,23 +145,30 @@ export default function SpeechLab() {
       });
   };
 
-  const handleDeleteSpeech = (id: string, e: React.MouseEvent) => {
+  const handleDeleteSpeech = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setSpeeches((prev) => {
-      const filtered = prev.filter((s) => s.id !== id);
-      if (filtered.length === 0) {
-        setText("");
-        setTitle("");
-        setAnalysis(null);
-        setSelectedSpeech(null);
-      } else if (selectedSpeech?.id === id) {
-        const next = filtered[0];
-        setSelectedSpeech(next);
-        setText(next.content);
-        setTitle(next.title);
-      }
-      return filtered;
-    });
+    if (!confirm("Are you sure you want to delete this speech?")) return;
+
+    try {
+      await axios.delete(`/api/speech/${id}`);
+      setSpeeches((prev) => {
+        const filtered = prev.filter((s) => s.id !== id);
+        if (filtered.length === 0) {
+          setText("");
+          setTitle("");
+          setAnalysis(null);
+          setSelectedSpeech(null);
+        } else if (selectedSpeech?.id === id) {
+          const next = filtered[0];
+          setSelectedSpeech(next);
+          setText(next.content);
+          setTitle(next.title);
+        }
+        return filtered;
+      });
+    } catch (err: any) {
+      setError(err.response?.data || "Failed to delete speech");
+    }
   };
 
   const handleCreateSpeech = () => {
@@ -249,7 +256,7 @@ export default function SpeechLab() {
               >
                 <button
                   onClick={(e) => handleDeleteSpeech(speech.id, e)}
-                  className="absolute top-4 right-4 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
+                  className="absolute top-4 right-4 p-1.5 rounded-lg bg-destructive/5 hover:bg-destructive/10 text-destructive-foreground/50 hover:text-destructive transition-all"
                   title="Delete Speech"
                 >
                   <Trash2 className="w-3.5 h-3.5" />

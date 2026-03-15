@@ -95,3 +95,22 @@ export const PUT = withAuth(async (req, user, { params }) => {
     return new Response(error.message || "Internal Server Error", { status: 500 });
   }
 });
+
+export const DELETE = withAuth(async (req, user, { params }) => {
+  try {
+    const { id } = await params;
+
+    const speech = await prisma.speech.findUnique({ where: { id } });
+
+    if (!speech) return new Response("Speech not found", { status: 404 });
+    if (speech.userId !== user.id) return new Response("Unauthorized", { status: 401 });
+
+    await prisma.speech.delete({
+      where: { id },
+    });
+
+    return new Response(null, { status: 204 });
+  } catch (error: any) {
+    return new Response(error.message || "Internal Server Error", { status: 500 });
+  }
+});
