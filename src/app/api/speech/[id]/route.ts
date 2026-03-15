@@ -109,7 +109,7 @@ export const DELETE = withAuth(async (req, user, { params }) => {
       where: { id },
     });
 
-    return new Response(null, { status: 204 });
+    return Response.json({ message: "Speech deleted successfully" });
   } catch (error: any) {
     return new Response(error.message || "Internal Server Error", { status: 500 });
   }
