@@ -77,6 +77,7 @@ export default function CrisisSimulator() {
       .finally(() => setEventsLoading(false));
   };
   useEffect(() => {
+    if (!conference) return;
     const crisis = sessionStorage.getItem("crisis");
     if (crisis) {
       setEvents(JSON.parse(crisis));
