@@ -5,9 +5,8 @@ import { prisma } from "./prisma";
 
 export async function subscriptionValid(subscription: Subscription) {
   let newSubscription: Subscription = subscription;
-  console.log(subscription.currentPeriodEnd);
-  console.log(newSubscription.currentPeriodEnd);
 
+  // If the current period end is in the past and the status is active, update the status to inactive
   if (
     isPast(subscription.currentPeriodEnd as Date) &&
     subscription.status?.toLowerCase() == "active"
@@ -20,9 +19,10 @@ export async function subscriptionValid(subscription: Subscription) {
     });
   }
 
+  // If the new subscription status is inactive or the new subscription current period end is in the past, return false
   if (
     newSubscription.status?.toLowerCase() == "inactive" ||
-    isPast(subscription.currentPeriodEnd as Date)
+    isPast(newSubscription.currentPeriodEnd as Date)
   ) {
     return false;
   }

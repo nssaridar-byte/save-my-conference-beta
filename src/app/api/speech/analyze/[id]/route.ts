@@ -34,34 +34,26 @@ export const POST = withAuth(async (req, user, { params }) => {
     // Check if usage exists and if the user is on the free tier (no subscription or invalid subscription)
     const isPro =
       fullUser.subscription &&
-      (await subscriptionValid(fullUser.subscription as unknown as Subscription));
+      (await subscriptionValid(
+        fullUser.subscription as unknown as Subscription,
+      ));
 
-    if (usage && !isPro) {
+    // Check if the user doesn't have (the pro subscription or if he is on the free tier ) and that he has accumalated some usage
+    if ((!isPro || fullUser.role == "FREE") && usage) {
+      // If the usage count including the one he is making is equal to the limit, update the limit hit at but still allow it to pass through
       if (usage.speechesCount + 1 == 3) {
         await prisma.usage.update({
           where: {
-            userId: fullUser.id,
+            userId: user.id,
           },
           data: {
             speechesLimitHitAt: new Date(),
           },
         });
       }
-      if (usage.speechesLimitHitAt) {
-        const hoursSinceLastHit = differenceInHours(
-          new Date(),
-          usage.speechesLimitHitAt,
-        );
-
-        if (hoursSinceLastHit >= 24) {
-          usage = await prisma.usage.update({
-            where: { userId: fullUser.id },
-            data: { speechesCount: 0, speechesLimitHitAt: null },
-          });
-        } else {
-          return new Response("Limit reached", { status: 403 });
-        }
-      }
+      // If the speechesCount is more than or equal to 3, throw an error
+      if (usage.speechesCount >= 3)
+        return new Response("Usage limit reached", { status: 403 });
     }
 
     const speech = await prisma.speech.findUnique({
