@@ -31,31 +31,16 @@ export async function POST(req: Request) {
 
     if (!passValid) return new Response("Incorrect Password", { status: 400 });
 
-    if (!user.emailVerified) {
-      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-      
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { verificationCode }
-      });
-
-      await sendVerificationCode(email, verificationCode);
-
-      return new Response("Unverified", { status: 403 });
-    }
-
-    const token = sign(
-      { id: user.id },
-      process.env.JWT_SECRET as string,
-    );
-
-    const cookieStore = await cookies();
-
-    cookieStore.set("token", token, {
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { verificationCode }
     });
-    return Response.json({ user });
+
+    await sendVerificationCode(email, verificationCode);
+
+    return new Response("Unverified", { status: 403 });
   } catch (error: any) {
     console.error("Login catastrophic error:", error);
     return Response.json({ error: error.message || "Internal Server Error" }, { status: 500 });

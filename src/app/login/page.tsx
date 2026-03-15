@@ -25,7 +25,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
-  const [signupSuccess, setSignupSuccess] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const { setUser } = UseUser()
   const router = useRouter()
   return (
@@ -118,7 +118,7 @@ export default function LoginPage() {
               }).catch((err) => {
                 if (err.response?.status === 401 || err.response?.status === 403) {
                   if (err.response?.data === "Unverified") {
-                    router.push(`/verify?email=${encodeURIComponent(email)}`);
+                    router.push(`/verify?email=${encodeURIComponent(email)}&rememberMe=${rememberMe}`);
                     return;
                   }
                 }
@@ -130,7 +130,7 @@ export default function LoginPage() {
                 email,
                 password
               }).then((res) => {
-                router.push(`/verify?email=${encodeURIComponent(email)}`)
+                router.push(`/verify?email=${encodeURIComponent(email)}&rememberMe=${rememberMe}`)
               }).catch((err) => {
                 setError(err.response?.data?.error ?? err.response?.data ?? err.message)
               })
@@ -177,11 +177,23 @@ export default function LoginPage() {
               </button>
             </div>
 
-            {mode === "login" && (
-              <div className="flex justify-end">
-                <a href="#" className="text-sm text-primary hover:underline">Forgot password?</a>
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <input
+                  id="rememberMe"
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary/50 bg-card cursor-pointer transition-all"
+                />
+                <label htmlFor="rememberMe" className="text-sm text-muted-foreground cursor-pointer select-none">
+                  Remember Me
+                </label>
               </div>
-            )}
+              {mode === "login" && (
+                <a href="#" className="text-sm text-primary hover:underline font-medium">Forgot password?</a>
+              )}
+            </div>
 
             <div className="flex items-start gap-3 px-1 mt-1">
               <div className="flex items-center h-5">
@@ -203,42 +215,22 @@ export default function LoginPage() {
               <Captcha onVerify={setIsVerified} />
             </div>
 
-            {signupSuccess ? (
-              <div className="bg-primary/10 border border-primary/20 p-6 rounded-2xl text-center">
-                <Mail className="w-12 h-12 text-primary mx-auto mb-4 animate-bounce" />
-                <h3 className="text-lg font-bold text-foreground mb-2">Check your email.</h3>
-                <p className="text-sm text-muted-foreground">
-                  We've sent a verification link to <span className="text-foreground font-medium">{email}</span>. 
-                  Please click it to activate your account.
-                </p>
-                <Button 
-                  variant="ghost" 
-                  className="mt-4 text-xs" 
-                  onClick={() => setSignupSuccess(false)}
-                >
-                  Return to Signup
-                </Button>
-              </div>
-            ) : (
-              <>
-                <Button
-                  type="submit"
-                  disabled={!acceptedTerms || !isVerified}
-                  className={`w-full py-6 rounded-full font-geist font-semibold tracking-wide text-base mt-2 transition-all duration-300 ${
-                    acceptedTerms && isVerified
-                      ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20" 
-                      : "bg-muted text-muted-foreground cursor-not-allowed opacity-70"
-                  }`}
-                >
-                  {mode === "login" ? "Access Command Center" : "Begin Mission"}
-                </Button>
+            <Button
+              type="submit"
+              disabled={!acceptedTerms || !isVerified}
+              className={`w-full py-6 rounded-full font-geist font-semibold tracking-wide text-base mt-2 transition-all duration-300 ${
+                acceptedTerms && isVerified
+                  ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20" 
+                  : "bg-muted text-muted-foreground cursor-not-allowed opacity-70"
+              }`}
+            >
+              {mode === "login" ? "Access Command Center" : "Begin Mission"}
+            </Button>
 
-                {mode === "signup" && (
-                  <p className="text-xs text-center text-muted-foreground mt-2">
-                    Includes a <span className="text-primary font-semibold">3-day free trial</span> of the Pro Tier. No credit card required.
-                  </p>
-                )}
-              </>
+            {mode === "signup" && (
+              <p className="text-xs text-center text-muted-foreground mt-2">
+                Includes a <span className="text-primary font-semibold">3-day free trial</span> of the Pro Tier. No credit card required.
+              </p>
             )}
           </form>
 
