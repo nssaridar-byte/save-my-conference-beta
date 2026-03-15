@@ -10,7 +10,7 @@ import { GlobalConferenceSwitcher } from "@/components/conference-switcher";
 import { useLayoutSettings } from "@/hooks/use-layout-settings";
  
 // Routes that should NOT show the sidebar (full-screen pages)
-const SIDEBAR_FREE_PREFIXES = ["/login", "/pricing", "/checkout"];
+const SIDEBAR_FREE_PREFIXES = ["/login", "/pricing", "/checkout", "/verify"];
 
 import { Logo } from "@/components/logo";
 

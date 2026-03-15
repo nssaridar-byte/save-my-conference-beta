@@ -25,6 +25,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
   const { setUser } = UseUser()
   const router = useRouter()
   return (
@@ -115,8 +116,13 @@ export default function LoginPage() {
                 setUser(res.data.user)
                 router.push("/dashboard")
               }).catch((err) => {
-                console.log(err);
-                setError(err.response.data ?? err.message)
+                if (err.response?.status === 401 || err.response?.status === 403) {
+                  if (err.response?.data === "Unverified") {
+                    router.push(`/verify?email=${encodeURIComponent(email)}`);
+                    return;
+                  }
+                }
+                setError(err.response?.data?.error ?? err.response?.data ?? err.message)
               })
             } else if (mode == "signup") {
               axios.post("/api/signup", {
@@ -124,10 +130,9 @@ export default function LoginPage() {
                 email,
                 password
               }).then((res) => {
-                router.push("/dashboard")
-                setUser(res.data.user)
+                router.push(`/verify?email=${encodeURIComponent(email)}`)
               }).catch((err) => {
-                setError(err.response.data ?? err.message)
+                setError(err.response?.data?.error ?? err.response?.data ?? err.message)
               })
             }
           }}>
@@ -198,22 +203,42 @@ export default function LoginPage() {
               <Captcha onVerify={setIsVerified} />
             </div>
 
-            <Button
-              type="submit"
-              disabled={!acceptedTerms || !isVerified}
-              className={`w-full py-6 rounded-full font-geist font-semibold tracking-wide text-base mt-2 transition-all duration-300 ${
-                acceptedTerms && isVerified
-                  ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20" 
-                  : "bg-muted text-muted-foreground cursor-not-allowed opacity-70"
-              }`}
-            >
-              {mode === "login" ? "Access Command Center" : "Begin Mission"}
-            </Button>
+            {signupSuccess ? (
+              <div className="bg-primary/10 border border-primary/20 p-6 rounded-2xl text-center">
+                <Mail className="w-12 h-12 text-primary mx-auto mb-4 animate-bounce" />
+                <h3 className="text-lg font-bold text-foreground mb-2">Check your email.</h3>
+                <p className="text-sm text-muted-foreground">
+                  We've sent a verification link to <span className="text-foreground font-medium">{email}</span>. 
+                  Please click it to activate your account.
+                </p>
+                <Button 
+                  variant="ghost" 
+                  className="mt-4 text-xs" 
+                  onClick={() => setSignupSuccess(false)}
+                >
+                  Return to Signup
+                </Button>
+              </div>
+            ) : (
+              <>
+                <Button
+                  type="submit"
+                  disabled={!acceptedTerms || !isVerified}
+                  className={`w-full py-6 rounded-full font-geist font-semibold tracking-wide text-base mt-2 transition-all duration-300 ${
+                    acceptedTerms && isVerified
+                      ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20" 
+                      : "bg-muted text-muted-foreground cursor-not-allowed opacity-70"
+                  }`}
+                >
+                  {mode === "login" ? "Access Command Center" : "Begin Mission"}
+                </Button>
 
-            {mode === "signup" && (
-              <p className="text-xs text-center text-muted-foreground mt-2">
-                Includes a <span className="text-primary font-semibold">3-day free trial</span> of the Pro Tier. No credit card required.
-              </p>
+                {mode === "signup" && (
+                  <p className="text-xs text-center text-muted-foreground mt-2">
+                    Includes a <span className="text-primary font-semibold">3-day free trial</span> of the Pro Tier. No credit card required.
+                  </p>
+                )}
+              </>
             )}
           </form>
 
