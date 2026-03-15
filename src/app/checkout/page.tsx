@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState, useEffect } from "react";
+import axios from "axios";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -42,9 +43,15 @@ function CheckoutContent() {
     setIsProcessing(true);
     
     // Simulate API call
-    setTimeout(() => {
-      setIsProcessing(false);
-      setIsSuccess(true);
+    setTimeout(async () => {
+      try {
+        await axios.post("/api/subscription/success", { billing });
+        setIsProcessing(false);
+        setIsSuccess(true);
+      } catch (err) {
+        setIsProcessing(false);
+        alert("Payment processing failed. Please try again.");
+      }
     }, 2500);
   };
 

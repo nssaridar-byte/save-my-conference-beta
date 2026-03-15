@@ -32,6 +32,18 @@ export async function POST(req: Request) {
       },
     });
 
+    const token = sign(
+      { id: user.id, role: user.role, email: user.email },
+      process.env.JWT_SECRET as string,
+    );
+
+    const cookieStore = await cookies();
+
+    cookieStore.set("token", token, {
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+    });
+
     await sendVerificationCode(email, verificationCode);
 
     return Response.json({

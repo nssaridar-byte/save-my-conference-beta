@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   FileText,
   Home,
@@ -13,6 +14,7 @@ import {
   Mail,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 
 import {
   Sidebar,
@@ -73,7 +75,12 @@ const items = [
 
 function LogoutButton() {
   const router = useRouter();
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await axios.post("/api/logout");
+    } catch (e) {
+      console.error("Logout cookie clear failed:", e);
+    }
     sessionStorage.clear();
     localStorage.clear();
     window.location.href = "/login";
@@ -93,8 +100,18 @@ function LogoutButton() {
 
 import { Logo } from "@/components/logo";
 
+import { UseUser } from "../../contexts/UserContext";
+
 export function AppSidebar() {
   const pathname = usePathname();
+  const { user } = UseUser();
+  const isAdmin = user?.role === "ADMIN";
+
+  const filteredItems = items.filter(item => {
+    if (item.title === "Admin Panel") return isAdmin;
+    return true;
+  });
+
   return (
     <Sidebar variant="inset" collapsible="icon">
       <SidebarContent>
@@ -105,7 +122,7 @@ export function AppSidebar() {
           <SidebarGroupLabel className="font-geist">Modules</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => {
+              {filteredItems.map((item) => {
                 const isActive = pathname.startsWith(item.url);
                 return (
                   <SidebarMenuItem key={item.title}>

@@ -31,6 +31,18 @@ export async function POST(req: Request) {
 
     if (!passValid) return new Response("Incorrect Password", { status: 400 });
 
+    const token = sign(
+      { id: user.id, role: user.role, email: user.email },
+      process.env.JWT_SECRET as string,
+    );
+
+    const cookieStore = await cookies();
+
+    cookieStore.set("token", token, {
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+    });
+
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     
     await prisma.user.update({
