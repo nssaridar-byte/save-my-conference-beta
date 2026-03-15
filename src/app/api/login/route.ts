@@ -37,6 +37,7 @@ export async function POST(req: Request) {
       where: { id: user.id },
       data: { verificationCode }
     });
+    });
 
     await sendVerificationCode(email, verificationCode);
 
