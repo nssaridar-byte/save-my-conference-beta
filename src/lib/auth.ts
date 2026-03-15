@@ -23,6 +23,12 @@ export function withAuth(
         return new Response("Invalid session", { status: 401 });
       }
 
+      // Optional: If you want to block all API access for unverified users
+      // const userFromDb = await prisma.user.findUnique({ where: { id: decoded.id } });
+      // if (!userFromDb?.emailVerified) {
+      //   return new Response("Email not verified", { status: 403 });
+      // }
+
       const user: AuthUser = { id: decoded.id };
 
       return handler(req, user, context);

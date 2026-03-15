@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { isEmpty } from "../isEmpty";
-import { compare } from "bcrypt";
+import { compare } from "bcryptjs";
 import { sign } from "jsonwebtoken";
 import { cookies } from "next/headers";
+import { sendVerificationCode } from "@/lib/mail";
 
 export async function POST(req: Request) {
   try {
@@ -30,6 +31,19 @@ export async function POST(req: Request) {
 
     if (!passValid) return new Response("Incorrect Password", { status: 400 });
 
+    if (!user.emailVerified) {
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { verificationCode }
+      });
+
+      await sendVerificationCode(email, verificationCode);
+
+      return new Response("Unverified", { status: 403 });
+    }
+
     const token = sign(
       { id: user.id, user, name: user.name },
       process.env.JWT_SECRET as string,
@@ -43,6 +57,7 @@ export async function POST(req: Request) {
     });
     return Response.json({ user });
   } catch (error: any) {
-    return new Response(error, { status: 500 });
+    console.error("Login catastrophic error:", error);
+    return Response.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

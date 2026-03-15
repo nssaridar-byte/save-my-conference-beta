@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { isEmpty } from "../isEmpty";
-import { hash } from "bcrypt";
+import { hash } from "bcryptjs";
 import { sign } from "jsonwebtoken";
 import { cookies } from "next/headers";
+import { sendVerificationCode } from "@/lib/mail";
 
 export async function POST(req: Request) {
   try {
@@ -13,41 +14,30 @@ export async function POST(req: Request) {
     }
 
     const userCheck = await prisma.user.findFirst({
-      where: {
-        email,
-      },
+      where: { email },
     });
 
     if (userCheck) return new Response("Email taken", { status: 409 });
+
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
     const user = await prisma.user.create({
       data: {
         email,
         password: await hash(password, 10),
-        name,
-      },
-      include: {
-        conferences: true,
-        files: true,
-        speeches: true,
-        subscription: true,
-        usage: true,
+        name: name || "",
+        verificationCode,
       },
     });
 
-    const token = await sign(
-      { id: user.id, user, name },
-      process.env.JWT_SECRET as string,
-    );
+    await sendVerificationCode(email, verificationCode);
 
-    const cookieStore = await cookies();
-
-    cookieStore.set("token", token, {
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
+    return Response.json({ 
+      message: "Verification email sent",
+      user: { id: user.id, email: user.email, name: user.name } 
     });
-    return Response.json({ user });
   } catch (error: any) {
-    return new Response(error, { status: 500 });
+    console.error("Signup catastrophic error:", error);
+    return Response.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

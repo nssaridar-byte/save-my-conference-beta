@@ -1,73 +1,67 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
 datasource db {
   provider = "postgresql"
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
-enum Role {
-  FREE
-  PRO
-  ADMIN
-}
-
 model User {
-  id       String  @id @default(cuid())
-  name     String
-  email    String? @unique
-  password String?
-  role     Role    @default(FREE)
-
-  subscription Subscription?
-  usage        Usage?
-  speeches     Speech[]
-  files        File[]
-  conferences  Conference[]
-  quizes Quiz[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String        @id @default(cuid())
+  name             String
+  email            String?       @unique
+  password         String?
+  role             Role          @default(FREE)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  emailVerified    DateTime?
+  verificationCode String?
+  conferences      Conference[]
+  files            File[]
+  speeches         Speech[]
+  quizes           Quiz[]
+  subscription     Subscription?
+  usage            Usage?
 }
 
 model Subscription {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  id               String    @id @default(cuid())
+  userId           String    @unique
   stripeId         String?   @unique
-  status           String? // active, past_due, canceled
+  status           String?
   currentPeriodEnd DateTime?
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Usage {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  speechesCount      Int       @default(0)
+  quizzesCount       Int       @default(0)
+  debatesCount       Int       @default(0)
+  crisisCount        Int       @default(0)
+  crisisLimitHitAt   DateTime?
+  debatesLimitHitAt  DateTime?
+  quizzesLimitHitAt  DateTime?
   speechesLimitHitAt DateTime?
-  quizzesLimitHitAt DateTime?
-  debatesLimitHitAt DateTime?
-  crisisLimitHitAt DateTime?
-  speechesCount Int @default(0)
-  quizzesCount  Int @default(0)
-  debatesCount  Int @default(0)
-  crisisCount   Int @default(0)
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Speech {
-  id       String  @id @default(cuid())
-  userId   String
-  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title    String
-  content  String
-  grade    String? // A-F
-  feedback Json?
+  id           String     @id @default(cuid())
+  userId       String
+  title        String
+  content      String
+  grade        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
   conferenceId String
-  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
-  time Int?
-  topic String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  time         Int?
+  topic        String
+  feedback     Json?
+  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 model Quiz {
   id String @id @default(cuid())
@@ -79,19 +73,13 @@ model Quiz {
   createdAt DateTime @default(now())
 }
 model File {
-  id       String  @id @default(cuid())
-  userId   String
-  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name     String
-  url      String
-  isPublic Boolean @default(false)
-
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  url       String
+  isPublic  Boolean  @default(false)
   createdAt DateTime @default(now())
-}
-
-enum Status {
-  Active
-  Inactive
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Conference {
@@ -103,8 +91,19 @@ model Conference {
   committee String
   country   String
   authorId  String
+  topic     String
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  topic String
-  quizes Quiz[]
-  speeches Speech[]
+  speeches  Speech[]
+  quizes    Quiz[]
+}
+
+enum Role {
+  FREE
+  PRO
+  ADMIN
+}
+
+enum Status {
+  Active
+  Inactive
 }
