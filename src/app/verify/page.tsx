@@ -38,7 +38,8 @@ function VerifyContent() {
     setError("");
 
     try {
-      const res = await axios.post("/api/verify", { email, code });
+      const rememberMe = searchParams.get("rememberMe") === "true";
+      const res = await axios.post("/api/verify", { email, code, rememberMe });
       setUser(res.data.user);
       setIsSuccess(true);
       setTimeout(() => {

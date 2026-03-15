@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
   try {
-    const { email, code } = await req.json();
+    const { email, code, rememberMe } = await req.json();
 
     if (!email || !code) {
       return new Response("Missing email or code", { status: 400 });
@@ -27,26 +27,25 @@ export async function POST(req: Request) {
         emailVerified: new Date(),
         verificationCode: null,
       },
-      include: {
-        conferences: true,
-        files: true,
-        speeches: true,
-        subscription: true,
-        usage: true,
-      }
     });
 
     const jwtToken = await sign(
-      { id: updatedUser.id, user: updatedUser, name: updatedUser.name },
+      { id: updatedUser.id, email: updatedUser.email, name: updatedUser.name },
       process.env.JWT_SECRET as string,
     );
 
     const cookieStore = await cookies();
 
-    cookieStore.set("token", jwtToken, {
+    const cookieOptions: any = {
       secure: process.env.NODE_ENV === "production",
       path: "/",
-    });
+    };
+
+    if (rememberMe) {
+      cookieOptions.maxAge = 30 * 24 * 60 * 60; // 30 days
+    }
+
+    cookieStore.set("token", jwtToken, cookieOptions);
 
     return Response.json({ user: updatedUser });
   } catch (error: any) {
