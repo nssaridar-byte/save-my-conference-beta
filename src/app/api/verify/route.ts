@@ -30,13 +30,8 @@ export async function POST(req: Request) {
       },
     });
 
-    const jwtToken = sign(
-      { 
-        id: updatedUser.id, 
-        email: updatedUser.email, 
-        name: updatedUser.name,
-        role: updatedUser.role 
-      },
+    const jwtToken = await sign(
+      { id: updatedUser.id },
       process.env.JWT_SECRET as string,
     );
 
