@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { UseUser } from "../../contexts/UserContext";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
@@ -79,6 +82,15 @@ const fadeUp = {
 };
 
 export default function LandingPage() {
+  const { user, isLoading } = UseUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.push("/dashboard");
+    }
+  }, [user, isLoading, router]);
+
   return (
     <div className="min-h-screen bg-background text-foreground font-sans overflow-x-hidden">
 

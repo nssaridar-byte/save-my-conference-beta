@@ -26,8 +26,14 @@ export default function LoginPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const { setUser } = UseUser()
-  const router = useRouter()
+  const { setUser, user, isLoading } = UseUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.push("/dashboard");
+    }
+  }, [user, isLoading, router]);
   return (
     <div className="min-h-screen flex bg-background">
       {/* Left Panel — Branding */}
