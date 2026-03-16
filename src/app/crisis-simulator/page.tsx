@@ -123,7 +123,7 @@ export default function CrisisSimulator() {
       .finally(() => setFetchingResults(false));
   };
 
-  const evt = events[currentEvent];
+  const evt = events && events.length > 0 ? events[currentEvent] : null;
 
   return (
     <div className="flex flex-col gap-8 pb-8">
@@ -296,7 +296,7 @@ export default function CrisisSimulator() {
                     Operational Outcomes
                   </h3>
                   <div className="grid gap-4">
-                    {results.event_outcomes?.map((outcome: any, i: number) => (
+                    {results.event_outcomes && results.event_outcomes.map((outcome: any, i: number) => (
                       <div
                         key={i}
                         className="p-4 rounded-2xl bg-muted/30 border border-border/50 flex flex-col sm:flex-row sm:items-center gap-4 items-center justify-center "

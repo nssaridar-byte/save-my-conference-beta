@@ -115,6 +115,11 @@ export default function QuizArena() {
   const handleStart = async () => {
     await fetchQuestions();
     fetchUsage();
+    
+    // Safety check: Don't start if questions failed to fetch
+    if (!questions || questions.length === 0) {
+      return; 
+    }
     if (user) {
       setUser({
         ...user,
@@ -132,6 +137,13 @@ export default function QuizArena() {
 
   const handleSelect = (idx: number) => {
     if (selected !== null) return;
+    
+    // Safety check: Ensure question existence
+    if (!questions || !questions[currentQ]) {
+      console.error("No question found at index", currentQ);
+      return;
+    }
+
     setSelected(idx);
     const correct = idx === questions[currentQ].correct;
     if (correct) setScore((s) => s + 1);

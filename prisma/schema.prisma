@@ -23,6 +23,19 @@ model User {
   quizes           Quiz[]
   subscription     Subscription?
   usage            Usage?
+  tokenUsages     TokenUsage[]
+}
+
+model TokenUsage {
+  id               String   @id @default(cuid())
+  userId           String
+  feature          String   // e.g., "speech-analyze", "quiz-gen", "crisis-gen", "crisis-eval"
+  promptTokens     Int
+  completionTokens Int
+  totalTokens      Int
+  cost             Float    // Calculated cost in USD
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Subscription {
