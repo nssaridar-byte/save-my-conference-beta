@@ -32,6 +32,7 @@ export async function POST(req: Request) {
 
     if (!passValid) return new Response("Incorrect Password", { status: 400 });
 
+
     if (!user.emailVerified) {
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
       
@@ -62,6 +63,8 @@ export async function POST(req: Request) {
     }
 
     cookieStore.set("token", token, cookieOptions);
+
+    // Verify against new Prisma schema
 
     // --- Device Recognition Logic ---
     try {
@@ -101,7 +104,8 @@ export async function POST(req: Request) {
     }
     // ---------------------------------
 
-    return new Response("Unverified", { status: 403 });
+    return Response.json({ user });
+
   } catch (error: any) {
     console.error("Login catastrophic error:", error);
     return Response.json({ error: error.message || "Internal Server Error" }, { status: 500 });

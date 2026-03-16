@@ -97,6 +97,7 @@ export default function SpeechLab() {
   const { conference } = UseConference();
   const { user: currentUser } = UseUser();
   const [dbUsage, setDbUsage] = useState<Usage | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchUsage = () => {
     if (!currentUser?.id) return;
@@ -133,7 +134,7 @@ export default function SpeechLab() {
   };
 
   useEffect(() => {
-    if (!conference) return;
+    if (!conference || !currentUser) return;
     fetchSpeeches();
     fetchUsage();
   }, [conference, currentUser]);
@@ -204,6 +205,10 @@ export default function SpeechLab() {
   };
 
   const hasSpeechesDone = isHydrated && usage.speeches > 0;
+
+  if (error) {
+    return <Error error={error} />;
+  }
 
   if (conference == null) {
     return <Error error={"Please Select A Conference"} />;

@@ -21,10 +21,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useRoadmapStore, Mission } from "@/hooks/use-roadmap";
-import { useConferenceStore } from "@/hooks/use-conference";
 import { useLibraryStore } from "@/hooks/use-library";
-import { analyzeResearchGaps } from "@/lib/research-parser";
 import Link from "next/link";
+import axios from "axios";
+import { UseConference } from "../../contexts/ConferenceContext";
 
 /* ── Gauges ── */
 function ReadinessGauge({ score }: { score: number }) {
@@ -61,8 +61,7 @@ function ReadinessGauge({ score }: { score: number }) {
 }
 
 export function RoadmapPanel() {
-  const { getActive } = useConferenceStore();
-  const conference = getActive();
+  const { conference } = UseConference();
   const { 
     missions, 
     completeMission, 
@@ -77,25 +76,29 @@ export function RoadmapPanel() {
 
   // Sync missions based on date
   useEffect(() => {
-    if (conference?.date) {
+    if (conference?.id && conference?.date) {
       const days = Math.ceil((new Date(conference.date).getTime() - Date.now()) / 86_400_000);
-      syncMissions(days > 0 ? days : 0);
+      const research = getResearchForConference(conference.id);
+      syncMissions(conference.id, days > 0 ? days : 0, !!research);
     }
-  }, [conference?.date, syncMissions]);
+  }, [conference?.id, conference?.date, syncMissions, getResearchForConference]);
 
-  // Automated Gap Analysis from Library
+  // Automated AI Gap Analysis from Library
   useEffect(() => {
     if (conference?.id) {
       const research = getResearchForConference(conference.id);
       if (research && research.id !== lastSyncedDocId) {
         setIsAnalyzing(true);
-        const timer = setTimeout(() => {
-          const result = analyzeResearchGaps(research.content);
-          setMissingSections(result.missingSections);
+        axios.post("/api/dashboard/analyze-gaps", {
+          conferenceId: conference.id,
+          content: research.content
+        })
+        .then(res => {
+          setMissingSections(conference.id, res.data.missingSections);
           setLastSyncedDocId(research.id);
-          setIsAnalyzing(false);
-        }, 1500);
-        return () => clearTimeout(timer);
+        })
+        .catch(err => console.error("Auto Gap Analysis failed:", err))
+        .finally(() => setIsAnalyzing(false));
       }
     }
   }, [conference?.id, getResearchForConference, setMissingSections, lastSyncedDocId]);
@@ -105,16 +108,24 @@ export function RoadmapPanel() {
     const research = getResearchForConference(conference.id);
     if (research) {
       setIsAnalyzing(true);
-      setTimeout(() => {
-        const result = analyzeResearchGaps(research.content);
-        setMissingSections(result.missingSections);
-        setIsAnalyzing(false);
-      }, 1000);
+      axios.post("/api/dashboard/analyze-gaps", {
+        conferenceId: conference.id,
+        content: research.content
+      })
+      .then(res => {
+        setMissingSections(conference.id, res.data.missingSections);
+        setLastSyncedDocId(research.id);
+      })
+      .catch(err => alert("Re-Sync failed: " + (err.response?.data || err.message)))
+      .finally(() => setIsAnalyzing(false));
     }
   };
 
-  const completedCount = missions.filter(m => m.completed).length;
-  const totalCount = missions.length;
+  // Filter missions for THIS conference
+  const conferenceMissions = missions.filter(m => m.conferenceId === conference?.id);
+  
+  const completedCount = conferenceMissions.filter(m => m.completed).length;
+  const totalCount = conferenceMissions.length;
   const completionScore = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   const daysUntil = conference?.date 
@@ -164,9 +175,10 @@ export function RoadmapPanel() {
             <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 text-left">
               <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">Current Directive</p>
               <p className="text-sm text-foreground leading-relaxed italic">
-                {daysUntil > 14 ? "Focus on deep policy research and past resolutions." : 
-                 daysUntil > 7 ? "Draft and refine your opening statement for the Speaker's List." :
-                 "Master your rebuttal tech and memorize key RoP rules."}
+                {daysUntil > 21 ? "Phase 1: Deep Research & Policy Foundation." : 
+                 daysUntil > 10 ? "Phase 2: Strategy Drafting & Position Paper mastery." :
+                 daysUntil > 3 ? "Phase 3: Tactical Skill-Drills & Speech refinement." :
+                 "Phase 4: Battle Readiness, Crisis drills & Final polished rebuttals."}
               </p>
             </div>
           </div>
@@ -191,12 +203,12 @@ export function RoadmapPanel() {
 
           <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
             <AnimatePresence mode="popLayout">
-              {missions.length === 0 ? (
+              {conferenceMissions.length === 0 ? (
                 <div className="py-12 text-center border-2 border-dashed border-border rounded-3xl">
                   <p className="text-muted-foreground">Searching for assignments...</p>
                 </div>
               ) : (
-                missions.map((mission) => (
+                conferenceMissions.map((mission) => (
                   <motion.div
                     key={mission.id}
                     layout
@@ -279,8 +291,8 @@ export function RoadmapPanel() {
                   <div className="flex flex-col md:flex-row items-center gap-4">
                     <div className="flex-1 text-xs text-muted-foreground leading-relaxed italic">
                       {isAnalyzing 
-                        ? "Scanning library dossier for missing MUN pillars..." 
-                        : "Synchronized with your library dossier. Missing sections have been added to your Mission Feed as critical tasks."}
+                        ? "AI is scanning library dossier for missing MUN pillars..." 
+                        : "Synchronized with your library dossier via Gemini AI. Gaps identified have been added as actionable missions."}
                     </div>
                     <Button 
                       onClick={handleManualResync}
@@ -289,16 +301,16 @@ export function RoadmapPanel() {
                       className="rounded-full h-10 px-6 gap-2 shrink-0"
                     >
                       <RefreshCw className={`w-3.5 h-3.5 ${isAnalyzing ? 'animate-spin' : ''}`} />
-                      Re-Sync
+                      AI Re-Sync
                     </Button>
                   </div>
                 </div>
               ) : (
                 <div className="py-8 flex flex-col items-center gap-3 text-center border-2 border-dashed border-border rounded-2xl">
                    <p className="text-sm text-muted-foreground">No research found in the Library for this conference.</p>
-                   <Link href="/library">
+                   <Link href="/dual-library">
                      <Button variant="link" className="text-primary text-xs">
-                       Go to Library to upload research
+                       Go to Dual Library to upload research
                      </Button>
                    </Link>
                 </div>
