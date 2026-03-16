@@ -42,7 +42,7 @@ export function GlobalConferenceSwitcher() {
         className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-card hover:bg-muted/30 transition-colors text-xs font-semibold max-w-[140px] md:max-w-[200px]"
       >
         <span className="truncate">
-          {conference?.title ?? "Select conference"}
+          {conference?.title ?? "Select Conference"}
         </span>
         <ChevronDown
           className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}

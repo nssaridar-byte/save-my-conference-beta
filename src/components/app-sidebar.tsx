@@ -82,7 +82,10 @@ function LogoutButton() {
       console.error("Logout cookie clear failed:", e);
     }
     sessionStorage.removeItem("user");
-    localStorage.removeItem("user"); // Just in case it's used elsewhere
+    sessionStorage.removeItem("conference");
+    sessionStorage.removeItem("conferences");
+    localStorage.removeItem("user");
+    localStorage.removeItem("smc-conferences");
     window.location.href = "/login";
   };
 
