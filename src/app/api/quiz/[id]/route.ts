@@ -1,6 +1,7 @@
 import { AuthUser, withAuth } from "@/lib/auth";
 import { ai } from "@/lib/gemini";
 import { prisma } from "@/lib/prisma";
+import { recordTokenUsage } from "@/lib/token-usage";
 import { subscriptionValid } from "@/lib/subscription";
 import { Subscription } from "@prisma/client";
 
@@ -113,6 +114,10 @@ JSON SCHEMA TO FOLLOW EXACTLY:
 ]
 `;
 
+      if (!process.env.GEMINI_API_KEY) {
+        return new Response("GEMINI_API_KEY is missing from environment variables. Please check your .env file.", { status: 500 });
+      }
+
       const res = ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: prompt,
@@ -143,7 +148,13 @@ JSON SCHEMA TO FOLLOW EXACTLY:
         },
       });
 
-      const quizzes = JSON.parse((await res).text as string);
+      const response = await res;
+      const quizzes = JSON.parse(response.text as string);
+
+      // Record token usage
+      if (response.usageMetadata) {
+        await recordTokenUsage(user.id, "quiz-gen", response.usageMetadata);
+      }
       console.log(quizzes);
       await prisma.$transaction([
         prisma.usage.upsert({
@@ -173,9 +184,12 @@ JSON SCHEMA TO FOLLOW EXACTLY:
       ]);
 
       return Response.json({ quizzes });
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
-      return new Response("An error has occured", { status: 500 });
+      if (error.message?.includes("credentials") || error.message?.includes("ADC")) {
+        return new Response(`AI Authentication Error: ${error.message}. Ensure GEMINI_API_KEY is valid.`, { status: 500 });
+      }
+      return new Response(error.message || "An error has occured", { status: 500 });
     }
   },
 );

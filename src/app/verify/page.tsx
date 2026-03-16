@@ -19,6 +19,10 @@ function VerifyContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
+  const [resendCount, setResendCount] = useState(0);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
 
   useEffect(() => {
     const emailParam = searchParams.get("email");
@@ -26,6 +30,41 @@ function VerifyContent() {
       setEmail(emailParam);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const timer = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [resendTimer]);
+
+  const handleResend = async () => {
+    if (resendCount >= 3 || resendTimer > 0) return;
+
+    setResendLoading(true);
+    setError("");
+
+    const isSpamTrial = resendCount === 2; // This will be the 3rd click
+    console.log(`[FRONTEND] Resend attempt ${resendCount + 1}. isSpamTrial: ${isSpamTrial}`);
+
+    try {
+      await axios.post("/api/verify/resend", { 
+        email, 
+        isSpamAlert: isSpamTrial 
+      });
+      console.log(`[FRONTEND] Resend API called successfully for ${email}`);
+      
+      // Always increment and start timer to enforce the 30s wait
+      setResendCount((prev) => prev + 1);
+      setResendTimer(30);
+    } catch (err: any) {
+      setError(err.response?.data || "Failed to resend code.");
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,7 +149,26 @@ function VerifyContent() {
               {isLoading ? "Authenticating..." : "Establish Access"}
             </Button>
 
-            <div className="text-center">
+            <div className="text-center space-y-4">
+              <button
+                type="button"
+                disabled={resendTimer > 0 || resendCount >= 3 || resendLoading || isBlocked}
+                onClick={handleResend}
+                className="text-sm font-medium text-primary hover:text-primary/80 disabled:text-muted-foreground transition-colors flex items-center justify-center gap-2 mx-auto"
+              >
+                {resendTimer > 0 ? (
+                  `Resend code in ${resendTimer}s`
+                ) : resendLoading ? (
+                  "Sending..."
+                ) : resendCount >= 3 ? (
+                  "Please try again later"
+                ) : (
+                  <>
+                    <Mail className="w-4 h-4" /> Resend Code
+                  </>
+                )}
+              </button>
+
               <button 
                 type="button"
                 onClick={() => router.push("/login")}

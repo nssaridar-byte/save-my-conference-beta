@@ -33,15 +33,25 @@ export function ConferenceProvider({
     axios
       .get("/api/conferences")
       .then((res) => {
-        setConferences(res.data.conferences);
+        const fetchedConferences = res.data.conferences || [];
+        setConferences(fetchedConferences);
+        
+        // If the current active conference is not in the new list, or list is empty, clear it
+        if (fetchedConferences.length === 0) {
+          setConference(null);
+        } else if (conference && !fetchedConferences.find((c: Conference) => c.id === conference.id)) {
+          setConference(fetchedConferences[0]);
+        }
+
         sessionStorage.setItem(
           "conferences",
-          JSON.stringify(res.data.conferences),
+          JSON.stringify(fetchedConferences),
         );
       })
       .catch((err) => {
-        if (err.response.status == 404) {
+        if (err.response?.status == 404) {
           setConferences([]);
+          setConference(null);
         }
       });
   };

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { sign } from "jsonwebtoken";
 import { cookies } from "next/headers";
+import { sendWelcomeEmail } from "@/lib/mail";
 
 export async function POST(req: Request) {
   try {
@@ -46,6 +47,9 @@ export async function POST(req: Request) {
     }
 
     cookieStore.set("token", jwtToken, cookieOptions);
+
+    // Send the nice welcome email
+    await sendWelcomeEmail(updatedUser.email || email, updatedUser.name);
 
     return Response.json({ user: updatedUser });
   } catch (error: any) {

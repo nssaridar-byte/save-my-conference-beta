@@ -115,6 +115,11 @@ export default function QuizArena() {
   const handleStart = async () => {
     await fetchQuestions();
     fetchUsage();
+    
+    // Safety check: Don't start if questions failed to fetch
+    if (!questions || questions.length === 0) {
+      return; 
+    }
     if (user) {
       setUser({
         ...user,
@@ -132,6 +137,13 @@ export default function QuizArena() {
 
   const handleSelect = (idx: number) => {
     if (selected !== null) return;
+    
+    // Safety check: Ensure question existence
+    if (!questions || !questions[currentQ]) {
+      console.error("No question found at index", currentQ);
+      return;
+    }
+
     setSelected(idx);
     const correct = idx === questions[currentQ].correct;
     if (correct) setScore((s) => s + 1);
@@ -163,9 +175,11 @@ export default function QuizArena() {
             High-stakes competency validation for delegates
           </p>
         </div>
-        <div className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-geist font-semibold border border-primary/20">
-          Free: 3 quizzes/month
-        </div>
+        {user?.role === "FREE" && (
+          <div className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-geist font-semibold border border-primary/20">
+            {usage ? `${5 - usage.quizzesCount} quizzes left today` : "5 quizzes/day"}
+          </div>
+        )}
       </div>
 
       <AnimatePresence mode="wait">

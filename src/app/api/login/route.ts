@@ -3,7 +3,8 @@ import { isEmpty } from "../isEmpty";
 import { compare } from "bcryptjs";
 import { sign } from "jsonwebtoken";
 import { cookies } from "next/headers";
-import { sendVerificationCode } from "@/lib/mail";
+import { sendVerificationCode, sendNewDeviceLoginEmail } from "@/lib/mail";
+import { format } from "date-fns";
 
 export async function POST(req: Request) {
   try {
@@ -64,7 +65,45 @@ export async function POST(req: Request) {
 
     cookieStore.set("token", token, cookieOptions);
 
-    return Response.json({ user });
+    // --- Device Recognition Logic ---
+    try {
+      const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "Unknown IP";
+      const userAgent = req.headers.get("user-agent") || "Unknown Browser";
+
+      const existingDevice = await prisma.knownDevice.findFirst({
+        where: {
+          userId: user.id,
+          ip,
+          userAgent
+        }
+      });
+
+      if (!existingDevice) {
+        console.log(`[SECURITY] New device detected for ${email}: ${ip} | ${userAgent}`);
+        
+        // Send alert
+        await sendNewDeviceLoginEmail(email, {
+          ip,
+          userAgent,
+          time: format(new Date(), "PPpp")
+        });
+
+        // Save as known
+        await prisma.knownDevice.create({
+          data: {
+            userId: user.id,
+            ip,
+            userAgent
+          }
+        });
+      }
+    } catch (deviceError) {
+      console.error("Device recognition failed (silent):", deviceError);
+      // We don't block login if security check fails
+    }
+    // ---------------------------------
+
+    return new Response("Unverified", { status: 403 });
   } catch (error: any) {
     console.error("Login catastrophic error:", error);
     return Response.json({ error: error.message || "Internal Server Error" }, { status: 500 });

@@ -1,6 +1,7 @@
 import { AuthUser, withAuth } from "@/lib/auth";
 import { ai } from "@/lib/gemini";
 import { prisma } from "@/lib/prisma";
+import { recordTokenUsage } from "@/lib/token-usage";
 import { subscriptionValid } from "@/lib/subscription";
 import { Subscription } from "@prisma/client";
 
@@ -79,7 +80,7 @@ export const GET = withAuth(
    18   { "severity": "...", "text": "...", "region": "..." }
    19 ]`;
 
-      const response = ai.models.generateContent({
+      const result = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: prompt,
         config: {
@@ -106,7 +107,17 @@ export const GET = withAuth(
         },
       });
 
-      const crisis = JSON.parse((await response).text as string);
+      if (!process.env.GEMINI_API_KEY) {
+        return new Response("GEMINI_API_KEY is missing from environment variables. Please check your .env file.", { status: 500 });
+      }
+
+      const aiResponse = await result;
+      const crisis = JSON.parse(aiResponse.text as string);
+
+      // Record token usage
+      if (aiResponse.usageMetadata) {
+        await recordTokenUsage(user.id, "crisis-gen", aiResponse.usageMetadata);
+      }
       console.log(crisis);
       console.log("user id: " + user.id);
 
@@ -125,9 +136,12 @@ export const GET = withAuth(
         },
       });
       return Response.json({ crisis });
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
-      return new Response("An error has occured", { status: 500 });
+      if (error.message?.includes("credentials") || error.message?.includes("ADC")) {
+        return new Response(`AI Authentication Error: ${error.message}. Ensure GEMINI_API_KEY is valid.`, { status: 500 });
+      }
+      return new Response(error.message || "An error has occured", { status: 500 });
     }
   },
 );
@@ -207,7 +221,7 @@ export const POST = withAuth(
     DELEGATE RESPONSE:
     """${response}"""`;
 
-      const feedbackUnparsed = ai.models.generateContent({
+      const result = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: prompt,
         config: {
@@ -279,11 +293,25 @@ export const POST = withAuth(
         },
       });
 
-      const feedback = JSON.parse((await feedbackUnparsed).text as string);
+      if (!process.env.GEMINI_API_KEY) {
+        return new Response("GEMINI_API_KEY is missing from environment variables. Please check your .env file.", { status: 500 });
+      }
+
+      const aiFeedbackResponse = await result;
+      const feedback = JSON.parse(aiFeedbackResponse.text as string);
+
+      // Record token usage
+      if (aiFeedbackResponse.usageMetadata) {
+        await recordTokenUsage(user.id, "crisis-eval", aiFeedbackResponse.usageMetadata);
+      }
 
       return Response.json({ feedback });
-    } catch (error) {
-      return new Response("An error has occured", { status: 500 });
+    } catch (error: any) {
+      console.log(error);
+      if (error.message?.includes("credentials") || error.message?.includes("ADC")) {
+        return new Response(`AI Authentication Error: ${error.message}. Ensure GEMINI_API_KEY is valid.`, { status: 500 });
+      }
+      return new Response(error.message || "An error has occured", { status: 500 });
     }
   },
 );
