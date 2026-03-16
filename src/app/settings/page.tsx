@@ -21,6 +21,13 @@ import {
 } from "lucide-react";
 import { useUsageStore, FREE_DAILY_LIMITS } from "@/hooks/use-usage";
 import { useLayoutSettings } from "@/hooks/use-layout-settings";
+import { UseUser } from "../../../contexts/UserContext";
+import { useState, useEffect, useMemo } from "react";
+import axios from "axios";
+import { Usage } from "@prisma/client";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { format, subDays, eachDayOfInterval, startOfMonth, subMonths, eachMonthOfInterval } from "date-fns";
+import { Activity, Calendar } from "lucide-react";
 
 const container: Variants = {
   hidden: { opacity: 0 },
@@ -50,8 +57,78 @@ const USAGE_ITEMS = [
 export default function Settings() {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
-  const { usage, isProUser, getRemainingToday } = useUsageStore();
+  const { user } = UseUser();
   const { layoutMode, setLayoutMode } = useLayoutSettings();
+  const [dbUsage, setDbUsage] = useState<Usage | null>(null);
+  const [history, setHistory] = useState<any[]>([]);
+  const [timeframe, setTimeframe] = useState<"day" | "month" | "year">("day");
+
+  const fetchUsageData = async () => {
+    if (!user?.id) return;
+    try {
+      const [usageRes, historyRes] = await Promise.all([
+        axios.get(`/api/user/usage/${user.id}`),
+        axios.get(`/api/user/usage/history`)
+      ]);
+      setDbUsage(usageRes.data.usage);
+      setHistory(historyRes.data.usage);
+    } catch (error) {
+      console.error("Failed to fetch usage data", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsageData();
+  }, [user]);
+
+  const chartData = useMemo(() => {
+    if (!history || history.length === 0) return [];
+    
+    const now = new Date();
+
+    if (timeframe === "day") {
+      const days = eachDayOfInterval({ start: subDays(now, 13), end: now });
+      return days.map(day => {
+        const dayStr = format(day, "yyyy-MM-dd");
+        const dayUsage = history.filter((u: any) => format(new Date(u.createdAt), "yyyy-MM-dd") === dayStr);
+        return {
+          name: format(day, "MMM dd"),
+          requests: dayUsage.length,
+          tokens: dayUsage.reduce((sum: number, u: any) => sum + u.totalTokens, 0),
+        };
+      });
+    }
+
+    if (timeframe === "month") {
+      const months = Array.from({ length: 12 }, (_, i) => subMonths(now, 11 - i));
+      return months.map(month => {
+        const mStr = format(month, "yyyy-MM");
+        const monthUsage = history.filter((u: any) => format(new Date(u.createdAt), "yyyy-MM") === mStr);
+        return {
+          name: format(month, "MMM"),
+          requests: monthUsage.length,
+          tokens: monthUsage.reduce((sum: number, u: any) => sum + u.totalTokens, 0),
+        };
+      });
+    }
+
+    if (timeframe === "year") {
+      const years = [now.getFullYear() - 2, now.getFullYear() - 1, now.getFullYear()];
+      return years.map(y => {
+        const yearUsage = history.filter((u: any) => new Date(u.createdAt).getFullYear() === y);
+        return {
+          name: y.toString(),
+          requests: yearUsage.length,
+          tokens: yearUsage.reduce((sum: number, u: any) => sum + u.totalTokens, 0),
+        };
+      });
+    }
+
+    return [];
+  }, [history, timeframe]);
+
+  const isPro = user?.role === "PRO" || user?.role === "ADMIN";
+  const initials = user?.name ? user.name.split(" ").map(n => n[0]).join("").toUpperCase() : "U";
 
   return (
     <div className="flex flex-col gap-8 pb-8">
@@ -273,21 +350,21 @@ export default function Settings() {
           <div className="p-8 flex flex-col gap-5">
             <div className="flex items-center gap-4 mb-2">
               <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-playfair font-bold text-2xl shrink-0">
-                N
+                {initials}
               </div>
               <div>
-                <p className="font-semibold text-foreground">Nicolas Saridar</p>
-                <p className="text-sm text-muted-foreground">
-                  Administrator · Free Plan
+                <p className="font-semibold text-foreground">{user?.name || "User"}</p>
+                <p className="text-sm text-muted-foreground uppercase tracking-wider text-[10px] font-black">
+                  {user?.role} Plan
                 </p>
               </div>
             </div>
             <div className="grid gap-2">
               <label className="text-sm font-medium text-foreground">
-                Full Name
+                Display Name
               </label>
               <Input
-                defaultValue="Nicolas Saridar"
+                defaultValue={user?.name || ""}
                 className="rounded-2xl border-border max-w-md h-11"
               />
             </div>
@@ -296,7 +373,7 @@ export default function Settings() {
                 Email Address
               </label>
               <Input
-                defaultValue="nicolas@example.com"
+                defaultValue={user?.email || ""}
                 type="email"
                 className="rounded-2xl border-border max-w-md h-11"
               />
@@ -335,9 +412,9 @@ export default function Settings() {
                 Limits reset every day at midnight.
               </p>
             </div>
-            {isProUser ? (
+            {isPro ? (
               <div className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                <Crown className="w-3 h-3" /> Pro Plan
+                <Crown className="w-3 h-3" /> {user?.role} Plan
               </div>
             ) : (
               <div className="px-4 py-2 rounded-full border border-border text-muted-foreground text-xs font-semibold uppercase tracking-wider">
@@ -345,36 +422,112 @@ export default function Settings() {
               </div>
             )}
           </div>
-          <div className="p-8 flex flex-col gap-4">
-            {USAGE_ITEMS.map(({ key, label, icon: Icon }) => {
-              const remaining = getRemainingToday(key);
-              const limit = FREE_DAILY_LIMITS[key];
-              const used = isProUser ? 0 : Math.max(0, limit - remaining);
-              const pct = isProUser ? 0 : Math.round((used / limit) * 100);
-              return (
-                <div key={key} className="flex items-center gap-4">
-                  <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                    <Icon className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-end mb-1.5">
-                      <span className="text-sm font-medium text-foreground">
-                        {label}
-                      </span>
-                      <span className="text-xs text-muted-foreground font-mono">
-                        {isProUser ? "∞" : `${used} / ${limit} today`}
-                      </span>
+          <div className="p-8 flex flex-col gap-6">
+            {/* Timeframe Selector */}
+            <div className="flex items-center justify-between">
+              <div className="flex bg-muted/30 p-1 rounded-xl border border-border/50">
+                {(["day", "month", "year"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setTimeframe(t)}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      timeframe === t 
+                        ? "bg-card text-primary shadow-sm" 
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                  </button>
+                ))}
+              </div>
+              <div className="text-[10px] uppercase tracking-widest font-black text-muted-foreground flex items-center gap-1.5">
+                <Activity className="w-3 h-3" /> Historical Activity
+              </div>
+            </div>
+
+            {/* Chart */}
+            <div className="h-[200px] w-full bg-muted/10 rounded-2xl border border-border/50 p-4 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="colorUsage" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                  <XAxis 
+                    dataKey="name" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
+                    dy={10}
+                  />
+                  <Tooltip 
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-card border border-border p-3 rounded-xl shadow-xl">
+                            <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">{label}</p>
+                            <div className="flex flex-col gap-0.5">
+                              <p className="text-sm font-black text-primary">
+                                {payload[0].value} Requests
+                              </p>
+                              <p className="text-[10px] font-medium text-muted-foreground">
+                                {payload[0].payload.tokens.toLocaleString()} Tokens
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="requests" 
+                    stroke="var(--color-primary)" 
+                    strokeWidth={2}
+                    fillOpacity={1} 
+                    fill="url(#colorUsage)" 
+                    animationDuration={1500}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              {USAGE_ITEMS.map(({ key, label, icon: Icon }) => {
+                const limit = FREE_DAILY_LIMITS[key];
+                const used = dbUsage ? (dbUsage as any)[`${key}Count`] || 0 : 0;
+                const remaining = Math.max(0, limit - used);
+                const pct = isPro ? 0 : Math.round((used / limit) * 100);
+                return (
+                  <div key={key} className="flex items-center gap-4">
+                    <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                      <Icon className="w-4 h-4 text-primary" />
                     </div>
-                    <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${pct >= 100 ? "bg-destructive" : "bg-primary"}`}
-                        style={{ width: isProUser ? "0%" : `${pct}%` }}
-                      />
+                    <div className="flex-1">
+                      <div className="flex justify-between items-end mb-1.5">
+                        <span className="text-sm font-medium text-foreground">
+                          {label}
+                        </span>
+                        <span className="text-xs text-muted-foreground font-mono">
+                          {isPro ? `${used} / ∞` : `${used} / ${limit} today`}
+                        </span>
+                      </div>
+                      <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${pct >= 100 ? "bg-destructive" : "bg-primary"}`}
+                          style={{ width: isPro ? "0%" : `${pct}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </motion.div>
 
@@ -427,10 +580,12 @@ export default function Settings() {
             </div>
 
             {/* Pro Tier */}
-            <div className="flex flex-col rounded-3xl border-2 border-primary bg-primary/5 p-7 relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold px-4 py-1.5 rounded-bl-2xl uppercase tracking-widest">
-                Recommended
-              </div>
+            <div className={`flex flex-col rounded-3xl border-2 p-7 relative overflow-hidden ${isPro ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
+              {isPro && (
+                <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold px-4 py-1.5 rounded-bl-2xl uppercase tracking-widest">
+                  Active
+                </div>
+              )}
               <h4 className="font-geist font-bold text-lg text-primary">
                 Senior Diplomat
               </h4>
