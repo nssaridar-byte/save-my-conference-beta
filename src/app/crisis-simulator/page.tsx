@@ -6,11 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Zap, Shield, Globe2, ChevronRight, CheckCircle2 } from "lucide-react";
 import axios from "axios";
 import { UseConference } from "../../../contexts/ConferenceContext";
+import { UseUser } from "../../../contexts/UserContext";
+import { Usage } from "@prisma/client";
 
 const container: Variants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.1 } },
 };
+
 const item: Variants = {
   hidden: { opacity: 0, y: 20 },
   show: {
@@ -56,7 +59,16 @@ export default function CrisisSimulator() {
   const [fetchingResults, setFetchingResults] = useState<boolean>(false);
   const [limitReached, setLimitReached] = useState<boolean>(false);
   const [results, setResults] = useState<any>(null);
+  const [usage, setUsage] = useState<Usage | null>(null);
   const { conference } = UseConference();
+  const { user } = UseUser();
+
+  const fetchUsage = () => {
+    if (!user?.id) return;
+    axios.get(`/api/user/usage/${user.id}`).then((res) => {
+      setUsage(res.data.usage);
+    });
+  };
 
   const fetchEvents = () => {
     setEventsLoading(true);
@@ -82,7 +94,8 @@ export default function CrisisSimulator() {
     if (crisis) {
       setEvents(JSON.parse(crisis));
     }
-  }, []);
+    fetchUsage();
+  }, [user]);
   useEffect(() => {
     if (events.length === 0) return;
     const timer = setInterval(
@@ -135,6 +148,14 @@ export default function CrisisSimulator() {
           Respond to real-time events and submit directives.
         </p>
       </div>
+
+      {user?.role === "FREE" && (
+        <div className="w-fit px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-geist font-semibold border border-primary/20">
+          {usage
+            ? `${Math.max(0, 1 - usage.crisisCount)} trials left today`
+            : "1 trial/day"}
+        </div>
+      )}
 
       {/* Live Ticker */}
       <AnimatePresence mode="wait">

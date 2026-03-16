@@ -20,6 +20,8 @@ import { Speech } from "@prisma/client";
 import axios from "axios";
 import Error from "@/components/Error";
 import { UseConference } from "../../../contexts/ConferenceContext";
+import { UseUser } from "../../../contexts/UserContext";
+import { Usage } from "@prisma/client";
 
 const container: Variants = {
   hidden: { opacity: 0 },
@@ -91,9 +93,17 @@ export default function SpeechLab() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedSpeech, setSelectedSpeech] = useState<Speech | null>(null);
   const [speeches, setSpeeches] = useState<Speech[]>([]);
-  const [error, setError] = useState("");
   const [isHydrated, setIsHydrated] = useState(false);
   const { conference } = UseConference();
+  const { user: currentUser } = UseUser();
+  const [dbUsage, setDbUsage] = useState<Usage | null>(null);
+
+  const fetchUsage = () => {
+    if (!currentUser?.id) return;
+    axios.get(`/api/user/usage/${currentUser.id}`).then((res) => {
+      setDbUsage(res.data.usage);
+    });
+  };
 
   // Ensure hydration before checking usage
   useEffect(() => {
@@ -125,7 +135,8 @@ export default function SpeechLab() {
   useEffect(() => {
     if (!conference) return;
     fetchSpeeches();
-  }, [conference]);
+    fetchUsage();
+  }, [conference, currentUser]);
 
   const handleAnalyze = () => {
     if (!selectedSpeech?.id) return;
@@ -209,6 +220,13 @@ export default function SpeechLab() {
             Draft, refine, and practice your speeches
           </p>
         </div>
+        {currentUser?.role === "FREE" && (
+          <div className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-geist font-semibold border border-primary/20">
+            {dbUsage
+              ? `${Math.max(0, 3 - dbUsage.speechesCount)} analyses left today`
+              : "3 analyses/day"}
+          </div>
+        )}
         {hasSpeechesDone && (
           <Button
             onClick={handleCreateSpeech}

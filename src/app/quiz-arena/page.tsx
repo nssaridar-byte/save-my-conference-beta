@@ -175,9 +175,11 @@ export default function QuizArena() {
             High-stakes competency validation for delegates
           </p>
         </div>
-        <div className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-geist font-semibold border border-primary/20">
-          Free: 3 quizzes/month
-        </div>
+        {user?.role === "FREE" && (
+          <div className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-geist font-semibold border border-primary/20">
+            {usage ? `${5 - usage.quizzesCount} quizzes left today` : "5 quizzes/day"}
+          </div>
+        )}
       </div>
 
       <AnimatePresence mode="wait">
