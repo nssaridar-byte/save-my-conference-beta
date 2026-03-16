@@ -8,7 +8,7 @@ import { format } from "date-fns";
 
 export async function POST(req: Request) {
   try {
-    const { email, password } = await req.json();
+    const { email, password, rememberMe } = await req.json();
 
     if (!email || !password || isEmpty([email, password]))
       return new Response("Please fill all fields", { status: 400 });
@@ -32,27 +32,39 @@ export async function POST(req: Request) {
 
     if (!passValid) return new Response("Incorrect Password", { status: 400 });
 
+
+    if (!user.emailVerified) {
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { verificationCode }
+      });
+
+      await sendVerificationCode(email, verificationCode);
+
+      return new Response("Unverified", { status: 403 });
+    }
+
     const token = sign(
-      { id: user.id, role: user.role, email: user.email },
+      { id: user.id },
       process.env.JWT_SECRET as string,
     );
 
     const cookieStore = await cookies();
 
-    cookieStore.set("token", token, {
+    const cookieOptions: any = {
       secure: process.env.NODE_ENV === "production",
       path: "/",
-    });
+    };
 
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { verificationCode }
-    });
+    if (rememberMe) {
+      cookieOptions.maxAge = 30 * 24 * 60 * 60; // 30 days
+    }
 
-    await sendVerificationCode(email, verificationCode);
+    cookieStore.set("token", token, cookieOptions);
 
+    // Verify against new Prisma schema
     // --- Device Recognition Logic ---
     try {
       const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "Unknown IP";
@@ -91,7 +103,7 @@ export async function POST(req: Request) {
     }
     // ---------------------------------
 
-    return new Response("Unverified", { status: 403 });
+    return Response.json({ user });
   } catch (error: any) {
     console.error("Login catastrophic error:", error);
     return Response.json({ error: error.message || "Internal Server Error" }, { status: 500 });

@@ -8,6 +8,10 @@ export const GET = withAuth(async (req, user) => {
       include: {
         subscription: true,
         usage: true,
+        conferences: true,
+        files: true,
+        quizes: true,
+        speeches: true,
       },
     });
 
