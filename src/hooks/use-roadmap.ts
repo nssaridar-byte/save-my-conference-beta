@@ -5,6 +5,7 @@ export type MissionType = 'research' | 'speech' | 'quiz' | 'drill' | 'gap';
 
 export interface Mission {
   id: string;
+  conferenceId: string; // Linked to a specific conference
   title: string;
   description: string;
   type: MissionType;
@@ -15,53 +16,83 @@ export interface Mission {
 }
 
 export interface RoadmapState {
-  conferenceDate: string | null;
   missions: Mission[];
   streak: number;
   lastUpdated: string;
-  missingSections: string[];
+  missingSections: Record<string, string[]>; // Map conferenceId to sections
   
   // Actions
-  setConferenceDate: (date: string) => void;
-  addMission: (mission: Omit<Mission, 'id' | 'createdAt' | 'completed'>) => void;
+  addMission: (conferenceId: string, mission: Omit<Mission, 'id' | 'createdAt' | 'completed' | 'conferenceId'>) => void;
   completeMission: (id: string) => void;
-  setMissingSections: (sections: string[]) => void;
-  syncMissions: (daysRemaining: number) => void;
-  resetMissions: () => void;
+  setMissingSections: (conferenceId: string, sections: string[]) => void;
+  syncMissions: (conferenceId: string, daysRemaining: number, hasResearch: boolean) => void;
+  resetMissions: (conferenceId: string) => void;
 }
 
-const generateMissionsForPhase = (daysRemaining: number): Omit<Mission, 'id' | 'createdAt' | 'completed'>[] => {
-  const missions: Omit<Mission, 'id' | 'createdAt' | 'completed'>[] = [];
+const generateMissionsForPhase = (
+  daysRemaining: number, 
+  hasResearch: boolean
+): Omit<Mission, 'id' | 'createdAt' | 'completed' | 'conferenceId'>[] => {
+  const missions: Omit<Mission, 'id' | 'createdAt' | 'completed' | 'conferenceId'>[] = [];
 
-  if (daysRemaining > 14) {
+  // 1. Foundational Feature: Research Upload
+  if (!hasResearch) {
     missions.push({
-      title: 'Analyze Topic Background',
-      description: 'Review the historical context of your committee topic.',
+      title: 'Initialize Research Dossier',
+      description: 'Upload your background research to the Dual Library for AI analysis.',
       type: 'research',
-      targetUrl: '/speech-lab', // Assuming research fits here or library
-      priority: 'medium'
-    });
-  } else if (daysRemaining > 7) {
-    missions.push({
-      title: 'Draft Opening Speech',
-      description: 'Your speech needs to be ready for the speaker list.',
-      type: 'speech',
-      targetUrl: '/speech-lab',
+      targetUrl: '/dual-library',
       priority: 'high'
     });
-  } else {
+    // If no research, we can't do much else in Phase 1
+    if (daysRemaining > 14) return missions;
+  }
+
+  // 2. Phased Feature Highlights
+  
+  // Phase 1 & 2: Content Creation (T-30 to T-10)
+  if (daysRemaining > 10) {
     missions.push({
-      title: 'Rules of Procedure Drill',
-      description: 'Speed-run the RoP quiz to stay sharp for the floor.',
+      title: 'Master Your Opening Speech',
+      description: 'Use the Speech Lab to draft a powerful hook and policy statement.',
+      type: 'speech',
+      targetUrl: '/speech-lab',
+      priority: daysRemaining < 21 ? 'high' : 'medium'
+    });
+  }
+
+  // Phase 3: Tactical Skill-Building (T-10 to T-3)
+  if (daysRemaining <= 10 && daysRemaining > 3) {
+    missions.push({
+      title: 'Rules of Procedure Sprint',
+      description: 'Test your knowledge of points and motions in the Quiz Arena.',
       type: 'quiz',
       targetUrl: '/quiz-arena',
       priority: 'high'
     });
     missions.push({
-      title: 'Crisis Response Training',
-      description: 'Practice high-pressure directive drafting.',
+      title: 'Adversarial Debate Practice',
+      description: 'Face off against AI in the Debate Arena to sharpen your rebuttals.',
+      type: 'drill',
+      targetUrl: '/debate-arena',
+      priority: 'medium'
+    });
+  }
+
+  // Phase 4: Battle Readiness (T-3 to T-1)
+  if (daysRemaining <= 3 && daysRemaining >= 1) {
+    missions.push({
+      title: 'High-Pressure Crisis Drill',
+      description: 'Simulate unexpected committee updates in the Crisis Simulator.',
       type: 'drill',
       targetUrl: '/crisis-simulator',
+      priority: 'high'
+    });
+    missions.push({
+      title: 'Final Policy Polish',
+      description: 'Review your dossiers in the Dual Library for last-minute prep.',
+      type: 'research',
+      targetUrl: '/dual-library',
       priority: 'medium'
     });
   }
@@ -72,19 +103,17 @@ const generateMissionsForPhase = (daysRemaining: number): Omit<Mission, 'id' | '
 export const useRoadmapStore = create<RoadmapState>()(
   persist(
     (set, get) => ({
-      conferenceDate: null,
       missions: [],
       streak: 0,
       lastUpdated: new Date().toISOString(),
-      missingSections: [],
+      missingSections: {},
 
-      setConferenceDate: (date) => set({ conferenceDate: date }),
-
-      addMission: (mission) => set((state) => ({
+      addMission: (conferenceId, mission) => set((state) => ({
         missions: [
           ...state.missions,
           {
             ...mission,
+            conferenceId,
             id: crypto.randomUUID(),
             createdAt: new Date().toISOString(),
             completed: false
@@ -97,10 +126,10 @@ export const useRoadmapStore = create<RoadmapState>()(
           m.id === id ? { ...m, completed: true } : m
         );
         
-        // Streak logic: check if this is the first completion of the day
+        // Streak logic
         const today = new Date().toISOString().split('T')[0];
-        const lastUpdate = state.lastUpdated.split('T')[0];
-        let streak = state.streak;
+        const lastUpdate = (state.lastUpdated || "").split('T')[0];
+        let streak = state.streak || 0;
         
         if (lastUpdate !== today) {
           streak += 1;
@@ -109,38 +138,48 @@ export const useRoadmapStore = create<RoadmapState>()(
         return { missions, streak, lastUpdated: new Date().toISOString() };
       }),
 
-      setMissingSections: (sections) => set((state) => {
+      setMissingSections: (conferenceId, sections) => set((state) => {
         // Generate gap missions
         const gapMissions: Mission[] = sections.map(section => ({
           id: crypto.randomUUID(),
-          title: `Gap Found: ${section}`,
-          description: `Your research is missing the ${section} section. Draft it now.`,
+          conferenceId,
+          title: `Research Gap: ${section}`,
+          description: `AI detected missing ${section} data. Add this to your dossier in the Dual Library.`,
           type: 'gap',
           completed: false,
-          targetUrl: '/speech-lab',
+          targetUrl: '/dual-library',
           priority: 'high',
           createdAt: new Date().toISOString()
         }));
 
-        // Filter out existing gap missions for the same section to avoid duplicates
-        const otherMissions = state.missions.filter(m => m.type !== 'gap');
+        // Filter out existing gap missions FOR THIS CONFERENCE
+        const otherMissions = state.missions.filter(m => !(m.conferenceId === conferenceId && m.type === 'gap'));
         
         return { 
-          missingSections: sections,
+          missingSections: {
+            ...state.missingSections,
+            [conferenceId]: sections
+          },
           missions: [...otherMissions, ...gapMissions]
         };
       }),
 
-      syncMissions: (daysRemaining) => {
+      syncMissions: (conferenceId, daysRemaining, hasResearch) => {
         const state = get();
-        const baseMissions = generateMissionsForPhase(daysRemaining);
+        const baseMissions = generateMissionsForPhase(daysRemaining, hasResearch);
         
-        // Only add if not already present by title
-        const currentTitles = new Set(state.missions.map(m => m.title));
+        // Only add if not already present for this conference by title
+        const currentTitles = new Set(
+          state.missions
+            .filter(m => m.conferenceId === conferenceId)
+            .map(m => m.title)
+        );
+        
         const newMissions = baseMissions
           .filter(bm => !currentTitles.has(bm.title))
           .map(bm => ({
             ...bm,
+            conferenceId,
             id: crypto.randomUUID(),
             createdAt: new Date().toISOString(),
             completed: false
@@ -151,10 +190,16 @@ export const useRoadmapStore = create<RoadmapState>()(
         }
       },
 
-      resetMissions: () => set({ missions: [], streak: 0, missingSections: [] })
+      resetMissions: (conferenceId) => set((state) => ({ 
+        missions: state.missions.filter(m => m.conferenceId !== conferenceId),
+        missingSections: {
+          ...state.missingSections,
+          [conferenceId]: []
+        }
+      }))
     }),
     {
-      name: 'smc-roadmap-v1',
+      name: 'smc-roadmap-v2',
     }
   )
 );
