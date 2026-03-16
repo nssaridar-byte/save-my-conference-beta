@@ -65,6 +65,7 @@ export async function POST(req: Request) {
     cookieStore.set("token", token, cookieOptions);
 
     // Verify against new Prisma schema
+
     // --- Device Recognition Logic ---
     try {
       const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "Unknown IP";
@@ -104,6 +105,7 @@ export async function POST(req: Request) {
     // ---------------------------------
 
     return Response.json({ user });
+
   } catch (error: any) {
     console.error("Login catastrophic error:", error);
     return Response.json({ error: error.message || "Internal Server Error" }, { status: 500 });
