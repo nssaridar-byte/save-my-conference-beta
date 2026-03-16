@@ -1,6 +1,6 @@
 "use client";
-import axios from "axios"
-import { useState } from "react";
+import axios from "axios";
+import { useEffect, useState } from "react";
 import { motion, type Variants } from "framer-motion";
 import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ export default function LoginPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { setUser, user, isLoading } = UseUser();
   const router = useRouter();
 
@@ -39,14 +40,24 @@ export default function LoginPage() {
       {/* Left Panel — Branding */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-primary flex-col items-center justify-center p-16 text-center">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-black/40 pointer-events-none" />
-        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'%3E%3Cpath d='M0 38.59l2.83-2.83 1.41 1.41L1.41 40H0v-1.41zM0 1.4l2.83 2.83 1.41-1.41L1.41 0H0v1.41zM38.59 40l-2.83-2.83 1.41-1.41L40 38.59V40h-1.41zM40 1.41l-2.83 2.83-1.41-1.41L38.59 0H40v1.41zM20 18.6l2.83-2.83 1.41 1.41L21.41 20l2.83 2.83-1.41 1.41L20 21.41l-2.83 2.83-1.41-1.41L18.59 20l-2.83-2.83 1.41-1.41L20 18.59z'/%3E%3C/g%3E%3C/svg%3E\")" }} />
+        <div
+          className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'%3E%3Cpath d='M0 38.59l2.83-2.83 1.41 1.41L1.41 40H0v-1.41zM0 1.4l2.83 2.83 1.41-1.41L1.41 0H0v1.41zM38.59 40l-2.83-2.83 1.41-1.41L40 38.59V40h-1.41zM40 1.41l-2.83 2.83-1.41-1.41L38.59 0H40v1.41zM20 18.6l2.83-2.83 1.41 1.41L21.41 20l2.83 2.83-1.41 1.41L20 21.41l-2.83 2.83-1.41-1.41L18.59 20l-2.83-2.83 1.41-1.41L20 18.59z'/%3E%3C/g%3E%3C/svg%3E\")",
+          }}
+        />
         <div className="relative z-10 flex flex-col items-center gap-8 max-w-sm">
           {/* Logo mark */}
           <Logo size="lg" />
           {/* Brand name */}
           <div className="text-center">
-            <p className="text-white font-playfair font-bold text-2xl tracking-wide uppercase">Save My Conference</p>
-            <p className="text-white/60 text-[10px] uppercase tracking-[0.3em] mt-2">MUN Command Center</p>
+            <p className="text-white font-playfair font-bold text-2xl tracking-wide uppercase">
+              Save My Conference
+            </p>
+            <p className="text-white/60 text-[10px] uppercase tracking-[0.3em] mt-2">
+              MUN Command Center
+            </p>
           </div>
           {/* Divider */}
           <div className="w-12 h-px bg-white/30" />
@@ -54,13 +65,17 @@ export default function LoginPage() {
           <blockquote className="text-white/90 font-playfair text-2xl font-semibold leading-snug">
             "Diplomacy is the art of letting someone have your way."
           </blockquote>
-          <p className="text-white/50 font-geist text-sm">— Daniele Vare, Italian Diplomat</p>
-          
+          <p className="text-white/50 font-geist text-sm">
+            — Daniele Vare, Italian Diplomat
+          </p>
+
           {/* Support Note */}
           <div className="mt-8 pt-8 border-t border-white/10 w-full">
-            <p className="text-white/40 text-[10px] uppercase tracking-widest mb-2 font-geist">Technical Support</p>
-            <a 
-              href="mailto:savemyconference@gmail.com" 
+            <p className="text-white/40 text-[10px] uppercase tracking-widest mb-2 font-geist">
+              Technical Support
+            </p>
+            <a
+              href="mailto:savemyconference@gmail.com"
               className="text-white/70 hover:text-white transition-colors font-medium text-sm flex items-center justify-center gap-2"
             >
               <Mail className="w-4 h-4" />
@@ -85,7 +100,9 @@ export default function LoginPage() {
 
           <div className="mb-8">
             <h1 className="font-playfair text-3xl font-bold text-foreground mb-2">
-              {mode === "login" ? "Welcome back, Delegate." : "Join the Command Center."}
+              {mode === "login"
+                ? "Welcome back, Delegate."
+                : "Join the Command Center."}
             </h1>
             <p className="text-muted-foreground">
               {mode === "login"
@@ -97,51 +114,91 @@ export default function LoginPage() {
           {/* Mode Toggle */}
           <div className="flex bg-muted/40 p-1 rounded-full mb-8">
             <button
-              onClick={() => { setMode("login"); setError("") }}
-              className={`flex-1 py-2.5 rounded-full text-sm font-medium transition-all ${mode === "login" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"
-                }`}
+              onClick={() => {
+                setMode("login");
+                setError("");
+              }}
+              className={`flex-1 py-2.5 rounded-full text-sm font-medium transition-all ${
+                mode === "login"
+                  ? "bg-background shadow-sm text-foreground"
+                  : "text-muted-foreground"
+              }`}
             >
-              Sign In
+              {loading ? "Signing in.." : "Sign In"}
             </button>
             <button
-              onClick={() => { setMode("signup"); setError("") }}
-              className={`flex-1 py-2.5 rounded-full text-sm font-medium transition-all ${mode === "signup" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"
-                }`}
+              onClick={() => {
+                setMode("signup");
+                setError("");
+              }}
+              className={`flex-1 py-2.5 rounded-full text-sm font-medium transition-all ${
+                mode === "signup"
+                  ? "bg-background shadow-sm text-foreground"
+                  : "text-muted-foreground"
+              }`}
             >
-              Create Account
+              {loading ? "Creating Account..." : "Create Account"}
             </button>
           </div>
 
-          <form className="flex flex-col gap-4" onSubmit={(e) => {
-            e.preventDefault()
-            if (mode == "login") {
-              axios.post("/api/login", {
-                email,
-                password
-              }).then((res) => {
-                setUser(res.data.user)
-                router.push("/dashboard")
-              }).catch((err) => {
-                if (err.response?.status === 401 || err.response?.status === 403) {
-                  if (err.response?.data === "Unverified") {
-                    router.push(`/verify?email=${encodeURIComponent(email)}&rememberMe=${rememberMe}`);
-                    return;
-                  }
-                }
-                setError(err.response?.data?.error ?? err.response?.data ?? err.message)
-              })
-            } else if (mode == "signup") {
-              axios.post("/api/signup", {
-                name,
-                email,
-                password
-              }).then((res) => {
-                router.push(`/verify?email=${encodeURIComponent(email)}&rememberMe=${rememberMe}`)
-              }).catch((err) => {
-                setError(err.response?.data?.error ?? err.response?.data ?? err.message)
-              })
-            }
-          }}>
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (loading) return;
+              setLoading(true);
+              if (mode == "login") {
+                axios
+                  .post("/api/login", {
+                    email,
+                    password,
+                  })
+                  .then((res) => {
+                    setUser(res.data.user);
+                    router.push("/dashboard");
+                  })
+                  .finally(() => setLoading(false))
+                  .catch((err) => {
+                    if (
+                      err.response?.status === 401 ||
+                      err.response?.status === 403
+                    ) {
+                      if (err.response?.data === "Unverified") {
+                        router.push(
+                          `/verify?email=${encodeURIComponent(email)}&rememberMe=${rememberMe}`,
+                        );
+                        return;
+                      }
+                    }
+                    setError(
+                      err.response?.data?.error ??
+                        err.response?.data ??
+                        err.message,
+                    );
+                  });
+              } else if (mode == "signup") {
+                axios
+                  .post("/api/signup", {
+                    name,
+                    email,
+                    password,
+                  })
+                  .then((res) => {
+                    router.push(
+                      `/verify?email=${encodeURIComponent(email)}&rememberMe=${rememberMe}`,
+                    );
+                  })
+                  .catch((err) => {
+                    setError(
+                      err.response?.data?.error ??
+                        err.response?.data ??
+                        err.message,
+                    );
+                  })
+                  .finally(() => setLoading(false));
+              }
+            }}
+          >
             {error && <Error error={error} />}
             {mode === "signup" && (
               <div className="relative">
@@ -179,7 +236,11 @@ export default function LoginPage() {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
               </button>
             </div>
 
@@ -192,12 +253,20 @@ export default function LoginPage() {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-4 h-4 rounded border-border text-primary focus:ring-primary/50 bg-card cursor-pointer transition-all"
                 />
-                <label htmlFor="rememberMe" className="text-sm text-muted-foreground cursor-pointer select-none">
+                <label
+                  htmlFor="rememberMe"
+                  className="text-sm text-muted-foreground cursor-pointer select-none"
+                >
                   Remember Me
                 </label>
               </div>
               {mode === "login" && (
-                <a href="#" className="text-sm text-primary hover:underline font-medium">Forgot password?</a>
+                <a
+                  href="#"
+                  className="text-sm text-primary hover:underline font-medium"
+                >
+                  Forgot password?
+                </a>
               )}
             </div>
 
@@ -212,8 +281,25 @@ export default function LoginPage() {
                   className="w-4 h-4 rounded border-border text-primary focus:ring-primary/50 bg-card cursor-pointer transition-all"
                 />
               </div>
-              <label htmlFor="terms" className="text-xs text-muted-foreground leading-normal cursor-pointer select-none">
-                I agree to the <Link href="/terms" className="text-primary hover:underline font-medium">Terms of Service</Link> and <Link href="/privacy" className="text-primary hover:underline font-medium">Privacy Policy</Link>.
+              <label
+                htmlFor="terms"
+                className="text-xs text-muted-foreground leading-normal cursor-pointer select-none"
+              >
+                I agree to the{" "}
+                <Link
+                  href="/terms"
+                  className="text-primary hover:underline font-medium"
+                >
+                  Terms of Service
+                </Link>{" "}
+                and{" "}
+                <Link
+                  href="/privacy"
+                  className="text-primary hover:underline font-medium"
+                >
+                  Privacy Policy
+                </Link>
+                .
               </label>
             </div>
 
@@ -226,7 +312,7 @@ export default function LoginPage() {
               disabled={!acceptedTerms || !isVerified}
               className={`w-full py-6 rounded-full font-geist font-semibold tracking-wide text-base mt-2 transition-all duration-300 ${
                 acceptedTerms && isVerified
-                  ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20" 
+                  ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
                   : "bg-muted text-muted-foreground cursor-not-allowed opacity-70"
               }`}
             >
@@ -235,19 +321,28 @@ export default function LoginPage() {
 
             {mode === "signup" && (
               <p className="text-xs text-center text-muted-foreground mt-2">
-                Includes a <span className="text-primary font-semibold">3-day free trial</span> of the Pro Tier. No credit card required.
+                Includes a{" "}
+                <span className="text-primary font-semibold">
+                  3-day free trial
+                </span>{" "}
+                of the Pro Tier. No credit card required.
               </p>
             )}
           </form>
 
           <div className="relative my-8 flex items-center gap-4">
             <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground">or continue as</span>
+            <span className="text-xs text-muted-foreground">
+              or continue as
+            </span>
             <div className="flex-1 h-px bg-border" />
           </div>
 
           <Link href="/dashboard">
-            <Button variant="outline" className="w-full py-6 rounded-full border border-border text-muted-foreground hover:text-foreground hover:bg-muted/30">
+            <Button
+              variant="outline"
+              className="w-full py-6 rounded-full border border-border text-muted-foreground hover:text-foreground hover:bg-muted/30"
+            >
               Continue as Guest (Limited Access)
             </Button>
           </Link>
