@@ -81,8 +81,8 @@ function LogoutButton() {
     } catch (e) {
       console.error("Logout cookie clear failed:", e);
     }
-    sessionStorage.clear();
-    localStorage.clear();
+    sessionStorage.removeItem("user");
+    localStorage.removeItem("user"); // Just in case it's used elsewhere
     window.location.href = "/login";
   };
 

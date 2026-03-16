@@ -22,6 +22,8 @@ const playfair = Playfair_Display({
   subsets: ["latin"],
 });
 
+import { PreferenceSync } from "@/components/preference-sync";
+
 export const metadata: Metadata = {
   title: "Save My Conference | MUN Command Center",
   description:
@@ -46,6 +48,7 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
+              <PreferenceSync />
               <ConditionalLayout>{children}</ConditionalLayout>
               <CookieConsent />
             </ThemeProvider>

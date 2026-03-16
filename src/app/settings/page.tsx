@@ -55,10 +55,20 @@ const USAGE_ITEMS = [
 ];
 
 export default function Settings() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme: setNextTheme } = useTheme();
   const router = useRouter();
-  const { user } = UseUser();
-  const { layoutMode, setLayoutMode } = useLayoutSettings();
+  const { user, updatePreferences } = UseUser();
+  const { layoutMode, setLayoutMode: setNextLayoutMode } = useLayoutSettings();
+
+  const handleThemeChange = (newTheme: string) => {
+    setNextTheme(newTheme);
+    updatePreferences({ theme: newTheme });
+  };
+
+  const handleLayoutChange = (newMode: LayoutMode) => {
+    setNextLayoutMode(newMode);
+    updatePreferences({ layoutMode: newMode });
+  };
   const [dbUsage, setDbUsage] = useState<Usage | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [timeframe, setTimeframe] = useState<"day" | "month" | "year">("day");
@@ -165,7 +175,7 @@ export default function Settings() {
             <div className="grid grid-cols-2 gap-4">
               {/* Light Mode Card */}
               <button
-                onClick={() => setTheme("light")}
+                onClick={() => handleThemeChange("light")}
                 className={`relative flex flex-col gap-3 p-5 rounded-2xl border-2 transition-all text-left group ${
                   theme === "light"
                     ? "border-primary bg-primary/5"
@@ -212,7 +222,7 @@ export default function Settings() {
 
               {/* Dark Mode Card */}
               <button
-                onClick={() => setTheme("dark")}
+                onClick={() => handleThemeChange("dark")}
                 className={`relative flex flex-col gap-3 p-5 rounded-2xl border-2 transition-all text-left group ${
                   theme === "dark"
                     ? "border-primary bg-primary/5"
@@ -276,7 +286,7 @@ export default function Settings() {
           <div className="p-8 flex flex-col gap-4">
             <div className="grid grid-cols-2 gap-4">
               <button
-                onClick={() => setLayoutMode("adaptive")}
+                onClick={() => handleLayoutChange("adaptive")}
                 className={`relative flex flex-col gap-3 p-5 rounded-2xl border-2 transition-all text-left group ${
                   layoutMode === "adaptive"
                     ? "border-primary bg-primary/5"
@@ -302,7 +312,7 @@ export default function Settings() {
               </button>
 
               <button
-                onClick={() => setLayoutMode("mobile-optimized")}
+                onClick={() => handleLayoutChange("mobile-optimized")}
                 className={`relative flex flex-col gap-3 p-5 rounded-2xl border-2 transition-all text-left group ${
                   layoutMode === "mobile-optimized"
                     ? "border-primary bg-primary/5"
@@ -646,8 +656,8 @@ export default function Settings() {
               variant="outline"
               className="rounded-full border-destructive/40 text-destructive hover:bg-destructive hover:text-destructive-foreground gap-2"
               onClick={() => {
-                sessionStorage.clear();
-                localStorage.clear();
+                sessionStorage.removeItem("user");
+                localStorage.removeItem("user");
                 window.location.href = "/login";
               }}
             >

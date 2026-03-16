@@ -7,12 +7,15 @@ import axios from "axios";
 export type TUser = User & {
   usage?: Usage | null;
   subscription?: Subscription | null;
+  theme?: string | null;
+  layoutMode?: string | null;
 };
 
 export interface TUserContext {
   user: TUser | null;
   setUser: (user: TUser | null) => void;
   isLoading: boolean;
+  updatePreferences: (prefs: { theme?: string; layoutMode?: string }) => Promise<void>;
 }
 
 export const UserContext = createContext<TUserContext | null>(null);
@@ -53,8 +56,20 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       });
   }, []);
 
+  const updatePreferences = async (prefs: { theme?: string; layoutMode?: string }) => {
+    if (!user) return;
+    try {
+      const res = await axios.post("/api/user/preferences", prefs);
+      if (res.data.success) {
+        setUser({ ...user, ...prefs });
+      }
+    } catch (error) {
+      console.error("Failed to update preferences", error);
+    }
+  };
+
   return (
-    <UserContext.Provider value={{ user, setUser, isLoading }}>
+    <UserContext.Provider value={{ user, setUser, isLoading, updatePreferences }}>
       {children}
     </UserContext.Provider>
   );
