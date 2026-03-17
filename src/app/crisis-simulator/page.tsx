@@ -277,7 +277,7 @@ export default function CrisisSimulator() {
             </div>
             <Button
               onClick={handleSubmit}
-              disabled={!directive.trim() || submitted}
+              disabled={!directive.trim() || submitted || events.length == 0}
               className="rounded-full px-6 bg-primary text-primary-foreground hover:bg-primary/90 shrink-0"
             >
               {fetchingResults == true
