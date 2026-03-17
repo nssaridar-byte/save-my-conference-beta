@@ -124,7 +124,7 @@ export default function LoginPage() {
                   : "text-muted-foreground"
               }`}
             >
-              {loading ? "Signing in.." : "Sign In"}
+              Sign In
             </button>
             <button
               onClick={() => {
@@ -137,7 +137,7 @@ export default function LoginPage() {
                   : "text-muted-foreground"
               }`}
             >
-              {loading ? "Creating Account..." : "Create Account"}
+              Create Account
             </button>
           </div>
 
@@ -314,9 +314,15 @@ export default function LoginPage() {
                 acceptedTerms && isVerified
                   ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
                   : "bg-muted text-muted-foreground cursor-not-allowed opacity-70"
-              }`}
+              } ${loading ? "animate-pulse" : ""}`}
             >
-              {mode === "login" ? "Access Command Center" : "Begin Mission"}
+              {mode === "login"
+                ? loading
+                  ? "Signing in..."
+                  : "Access Command Center"
+                : loading
+                  ? "Creating Account..."
+                  : "Begin Mission"}
             </Button>
 
             {mode === "signup" && (

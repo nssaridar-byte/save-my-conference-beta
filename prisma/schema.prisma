@@ -103,6 +103,8 @@ model Quiz {
 model File {
   id        String   @id @default(cuid())
   userId    String
+  conferenceId String
+  conference Conference @relation(fields: [conferenceId], references: [id])
   name      String
   url       String
   isPublic  Boolean  @default(false)
@@ -124,6 +126,7 @@ model Conference {
   speeches  Speech[]
   quizes    Quiz[]
   crisis    Crisis[]
+  file File[]
 }
 model Crisis {
   id String @id @default(cuid())

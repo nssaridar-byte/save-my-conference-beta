@@ -13,7 +13,7 @@ export async function POST(req: Request) {
       return new Response("Please provide email and password", { status: 400 });
     }
 
-    const userCheck = await prisma.user.findFirst({
+    const userCheck = await prisma.user.findUnique({
       where: { email },
     });
 
