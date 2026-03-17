@@ -115,7 +115,10 @@ JSON SCHEMA TO FOLLOW EXACTLY:
 `;
 
       if (!process.env.GEMINI_API_KEY) {
-        return new Response("GEMINI_API_KEY is missing from environment variables. Please check your .env file.", { status: 500 });
+        return new Response(
+          "GEMINI_API_KEY is missing from environment variables. Please check your .env file.",
+          { status: 500 },
+        );
       }
 
       const res = ai.models.generateContent({
@@ -155,7 +158,7 @@ JSON SCHEMA TO FOLLOW EXACTLY:
       if (response.usageMetadata) {
         await recordTokenUsage(user.id, "quiz-gen", response.usageMetadata);
       }
-      console.log(quizzes);
+      console.log("quizzes: " + quizzes);
       await prisma.$transaction([
         prisma.usage.upsert({
           where: {
@@ -185,11 +188,19 @@ JSON SCHEMA TO FOLLOW EXACTLY:
 
       return Response.json({ quizzes });
     } catch (error: any) {
-      console.log(error);
-      if (error.message?.includes("credentials") || error.message?.includes("ADC")) {
-        return new Response(`AI Authentication Error: ${error.message}. Ensure GEMINI_API_KEY is valid.`, { status: 500 });
+      console.log("error: " + error);
+      if (
+        error.message?.includes("credentials") ||
+        error.message?.includes("ADC")
+      ) {
+        return new Response(
+          `AI Authentication Error: ${error.message}. Ensure GEMINI_API_KEY is valid.`,
+          { status: 500 },
+        );
       }
-      return new Response(error.message || "An error has occured", { status: 500 });
+      return new Response(error.message || "An error has occured", {
+        status: 500,
+      });
     }
   },
 );

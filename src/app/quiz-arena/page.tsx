@@ -79,20 +79,21 @@ export default function QuizArena() {
     if (!user) return;
     fetchUsage();
   }, [user]);
-  const fetchQuestions = async () => {
+  const fetchQuestions = () => {
     setFetchingQuestions(true);
     setQuestions([]);
-    await axios
+    return axios
       .post(`/api/quiz/${conference?.id}`)
       .then((res) => {
-        setQuestions(res.data.quizzes);
-
-        console.log(res.data);
+        const quizzes = res.data.quizzes;
+        console.log("quizzes: ", quizzes);
+        setQuestions(quizzes);
+        return quizzes;
       })
       .catch((err) => {
-        console.log(err);
-
+        console.error(err);
         alert("there was an error");
+        return null;
       })
       .finally(() => setFetchingQuestions(false));
   };
@@ -113,12 +114,14 @@ export default function QuizArena() {
   }, [phase, currentQ]);
 
   const handleStart = async () => {
-    await fetchQuestions();
+    setQuestions([]);
     fetchUsage();
-    
+    const fetchedQuestions = await fetchQuestions();
+
     // Safety check: Don't start if questions failed to fetch
-    if (!questions || questions.length === 0) {
-      return; 
+    if (!fetchedQuestions || fetchedQuestions.length === 0) {
+      alert("No questions found");
+      return;
     }
     if (user) {
       setUser({
@@ -137,7 +140,7 @@ export default function QuizArena() {
 
   const handleSelect = (idx: number) => {
     if (selected !== null) return;
-    
+
     // Safety check: Ensure question existence
     if (!questions || !questions[currentQ]) {
       console.error("No question found at index", currentQ);
@@ -177,7 +180,9 @@ export default function QuizArena() {
         </div>
         {user?.role === "FREE" && (
           <div className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-geist font-semibold border border-primary/20">
-            {usage ? `${5 - usage.quizzesCount} quizzes left today` : "5 quizzes/day"}
+            {usage
+              ? `${5 - usage.quizzesCount} quizzes left today`
+              : "5 quizzes/day"}
           </div>
         )}
       </div>
