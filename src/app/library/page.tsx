@@ -16,10 +16,11 @@ import {
 import { useState, useRef, useEffect } from "react";
 import { useLibraryStore } from "@/hooks/use-library";
 import { useConferenceStore } from "@/hooks/use-conference";
-import { UploadButton } from "@uploadthing/react";
+import { UploadButton } from "@/components/uploadThing/uploadThing";
 import { File } from "@prisma/client";
 import { UseConference } from "../../../contexts/ConferenceContext";
 import axios from "axios";
+import { UploadDropzone } from "@uploadthing/react";
 
 const container: Variants = {
   hidden: { opacity: 0 },
@@ -61,103 +62,44 @@ const REPO_ITEMS = [
 
 export default function Library() {
   const [activeTab, setActiveTab] = useState<"vault" | "repository">("vault");
-  const { documents, addDocument, deleteDocument } = useLibraryStore();
   const [files, setFiles] = useState<File[]>([]);
 
   const { conference: activeConference } = UseConference();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
 
-  // Filter documents to show:
-  // 1. Documents for the active conference
-  // 2. Or all documents if no conference is active
-  const vaultItems = documents.filter(
-    (doc) =>
-      !activeConference ||
-      doc.conferenceId === activeConference.id ||
-      !doc.conferenceId,
-  );
-
   const fetchFiles = () => {
-    console.log("done");
-
     axios
       .get(`/api/files/${activeConference?.id}`)
       .then((res) => {
         setFiles(res.data.files);
+
+        return res.data.files;
       })
-      .catch((err) => {});
+      .catch((err) => {
+        if (err.response.status == 404) setFiles([]);
+      });
   };
 
   useEffect(() => {
     if (!activeConference) return;
     fetchFiles();
   }, [activeConference]);
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    isFolder = false,
-  ) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    if (isFolder) {
-      // If uploading a folder, we'll create a single "Folder" entry in the library
-      const folderName =
-        files[0].webkitRelativePath.split("/")[0] || "New Folder";
-      addDocument({
-        title: folderName,
-        content: `Folder containing ${files.length} files.`,
-        type: "Folder",
-        isPrivate: true,
-        conferenceId: activeConference?.id,
-        fileCount: files.length,
-      });
-    } else {
-      // Process individual files
-      Array.from(files).forEach((file) => {
-        const type = file.type.startsWith("image/")
-          ? "Image"
-          : "Research Brief";
-        addDocument({
-          title: file.name,
-          content: `Uploaded file: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`,
-          type: type as any,
-          isPrivate: true,
-          conferenceId: activeConference?.id,
-        });
-      });
-    }
-
-    // Reset inputs
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    if (folderInputRef.current) folderInputRef.current.value = "";
-  };
-
   const triggerFileUpload = () => fileInputRef.current?.click();
-  const triggerFolderUpload = () => folderInputRef.current?.click();
 
+  const deleteDocument = (fileId: string) => {
+    axios
+      .delete(`/api/files/${fileId}`)
+      .then(() => {
+        console.log("deleted");
+        fetchFiles();
+      })
+      .catch((err) => {
+        alert("There was an error");
+      });
+  };
   return (
     <div className="flex flex-col gap-8 pb-8">
-      {/* Hidden Inputs */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={(e) => handleFileChange(e)}
-        multiple
-        className="hidden"
-        accept="image/*,.pdf,.doc,.docx,.txt"
-      />
-      <input
-        type="file"
-        ref={folderInputRef}
-        onChange={(e) => handleFileChange(e, true)}
-        // @ts-ignore
-        webkitdirectory=""
-        // @ts-ignore
-        directory=""
-        className="hidden"
-      />
-
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h2 className="text-4xl font-playfair font-bold tracking-tight text-foreground">
@@ -221,6 +163,7 @@ export default function Library() {
                 Upload research docs, folders, or images for your active
                 conference.
               </p>
+
               <UploadButton
                 endpoint="docUploader"
                 input={{ conferenceId: activeConference?.id }}
@@ -246,21 +189,9 @@ export default function Library() {
                   className="rounded-3xl border border-primary/10 bg-card shadow-sm p-6 flex items-center gap-5 group hover:border-primary/30 transition-colors"
                 >
                   <div
-                    className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
-                      doc.type === "Folder"
-                        ? "bg-amber-500/10 text-amber-500"
-                        : doc.type === "Image"
-                          ? "bg-indigo-500/10 text-indigo-500"
-                          : "bg-primary/10 text-primary"
-                    }`}
+                    className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0`}
                   >
-                    {doc.type === "Folder" ? (
-                      <Folder className="w-5 h-5" />
-                    ) : doc.type === "Image" ? (
-                      <ImageIcon className="w-5 h-5" />
-                    ) : (
-                      <FileText className="w-5 h-5" />
-                    )}
+                    <FileText className="w-10 h-10" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-foreground truncate">
@@ -279,13 +210,6 @@ export default function Library() {
                   </div>
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
-                      variant="outline"
-                      size="sm"
-                      className="rounded-full border-border"
-                    >
-                      Open
-                    </Button>
-                    <Button
                       onClick={() => deleteDocument(doc.id)}
                       variant="ghost"
                       size="sm"
@@ -296,17 +220,16 @@ export default function Library() {
                   </div>
                 </motion.div>
               ))}
-              <motion.div
-                onClick={triggerFileUpload}
-                variants={item}
-                className="rounded-3xl border-2 border-dashed border-border/50 p-8 flex flex-col items-center text-center gap-3 cursor-pointer hover:border-primary/30 transition-colors group"
-              >
-                <Upload className="w-6 h-6 text-muted-foreground/40 group-hover:text-primary transition-colors" />
-                <p className="text-sm text-muted-foreground">
-                  Drop files or images here to sync with{" "}
-                  {activeConference?.title || "active conference"}
-                </p>
-              </motion.div>
+              <UploadDropzone
+                endpoint="docUploader"
+                input={{ conferenceId: activeConference?.id }}
+                appearance={{
+                  allowedContent: "hidden",
+                }}
+                onClientUploadComplete={() => {
+                  fetchFiles();
+                }}
+              />
             </motion.div>
           )}
         </motion.div>
