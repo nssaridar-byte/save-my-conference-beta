@@ -34,6 +34,7 @@ export const uploadRouter = {
       try {
         const uploadedFile = await prisma.file.create({
           data: {
+            id: file.key,
             userId: metadata.userId,
             name: file.name,
             url: file.ufsUrl,
