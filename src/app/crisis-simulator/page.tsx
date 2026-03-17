@@ -133,7 +133,11 @@ export default function CrisisSimulator() {
       .catch((err) => {
         alert("There was an error");
       })
-      .finally(() => setFetchingResults(false));
+      .finally(() => {
+        setFetchingResults(false);
+        fetchEvents();
+        sessionStorage.removeItem("crisis");
+      });
   };
 
   const evt = events && events.length > 0 ? events[currentEvent] : null;
@@ -273,7 +277,7 @@ export default function CrisisSimulator() {
             </div>
             <Button
               onClick={handleSubmit}
-              disabled={!directive.trim() || submitted}
+              disabled={!directive.trim() || submitted || events.length == 0}
               className="rounded-full px-6 bg-primary text-primary-foreground hover:bg-primary/90 shrink-0"
             >
               {fetchingResults == true
@@ -317,24 +321,25 @@ export default function CrisisSimulator() {
                     Operational Outcomes
                   </h3>
                   <div className="grid gap-4">
-                    {results.event_outcomes && results.event_outcomes.map((outcome: any, i: number) => (
-                      <div
-                        key={i}
-                        className="p-4 rounded-2xl bg-muted/30 border border-border/50 flex flex-col sm:flex-row sm:items-center gap-4 items-center justify-center "
-                      >
-                        <div className="shrink-0 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest">
-                          Crisis {outcome.event_id}
+                    {results.event_outcomes &&
+                      results.event_outcomes.map((outcome: any, i: number) => (
+                        <div
+                          key={i}
+                          className="p-4 rounded-2xl bg-muted/30 border border-border/50 flex flex-col sm:flex-row sm:items-center gap-4 items-center justify-center "
+                        >
+                          <div className="shrink-0 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest">
+                            Crisis {outcome.event_id}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground">
+                              {outcome.status}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {outcome.impact_note}
+                            </p>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-foreground">
-                            {outcome.status}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {outcome.impact_note}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </div>
 
