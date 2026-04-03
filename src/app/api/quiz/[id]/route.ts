@@ -82,7 +82,7 @@ export const POST = withAuth(
 
       const exclusionList =
         existingQuestions.length > 0
-          ? `\nMAKE SURE TO NOT INCLUDE ANY OF THE FOLLOWING QUESTIONS OR QUESTIONS SIMILAR TO THEM:\n${existingQuestions.map((q) => `- ${q}`).join("\n")}`
+          ? `\nMAKE SURE TO NOT INCLUDE ANY OF THE FOLLOWING QUESTIONS OR QUESTIONS SIMILAR TO THEM:\n${existingQuestions.map((q: string) => `- ${q}`).join("\n")}`
           : "";
 
       const prompt = `You are an expert Model United Nations (MUN) Director and Educational Content Creator. Your task is to generate challenging, educational multiple-choice quiz questions based on the provided conference topic.
