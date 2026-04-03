@@ -36,7 +36,7 @@ export const sendVerificationCode = async (email: string, code: string) => {
         </div>
       `,
     });
-    console.log(`[SUCCESS] Verification code sent to ${email}`);
+    console.log(`[SUCCESS] Verification code (${code}) sent to ${email}`);
   } catch (error) {
     console.error("Failed to send email via SMTP:", error);
     // Silent fallback to console
