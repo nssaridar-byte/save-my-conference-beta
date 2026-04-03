@@ -20,7 +20,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import { useUsageStore, FREE_DAILY_LIMITS } from "@/hooks/use-usage";
-import { useLayoutSettings } from "@/hooks/use-layout-settings";
+import { useLayoutSettings, LayoutMode } from "@/hooks/use-layout-settings";
 import { UseUser } from "../../../contexts/UserContext";
 import { useState, useEffect, useMemo } from "react";
 import axios from "axios";

@@ -96,7 +96,6 @@ export default function SpeechLab() {
   const [isHydrated, setIsHydrated] = useState(false);
   const { conference } = UseConference();
   const { user: currentUser } = UseUser();
-  const [error, setError] = useState("");
   const [dbUsage, setDbUsage] = useState<Usage | null>(null);
   const [error, setError] = useState<string | null>(null);
 

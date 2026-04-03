@@ -16,11 +16,11 @@ import {
 import { useState, useRef, useEffect } from "react";
 import { useLibraryStore } from "@/hooks/use-library";
 import { useConferenceStore } from "@/hooks/use-conference";
-import { UploadButton } from "@/components/uploadThing/uploadThing";
+import { UploadButton, UploadDropzone } from "@/components/uploadThing/uploadThing";
 import { File } from "@prisma/client";
 import { UseConference } from "../../../contexts/ConferenceContext";
 import axios from "axios";
-import { UploadDropzone } from "@uploadthing/react";
+
 
 const container: Variants = {
   hidden: { opacity: 0 },
