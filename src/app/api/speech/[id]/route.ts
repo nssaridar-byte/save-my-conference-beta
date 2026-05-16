@@ -20,9 +20,8 @@ export const GET = withAuth(async (req, user, { params }) => {
       },
     });
 
-    if (speeches.length == 0)
-      return new Response("No speeches found", { status: 404 });
     return Response.json({ speeches });
+
   } catch (error: any) {
     return new Response(error.message || "Internal Server Error", { status: 500 });
   }

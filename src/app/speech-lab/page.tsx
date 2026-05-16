@@ -204,7 +204,8 @@ export default function SpeechLab() {
       });
   };
 
-  const hasSpeechesDone = isHydrated && usage.speeches > 0;
+  const hasSpeechesDone = isHydrated;
+
 
   if (error) {
     return <Error error={error} />;
@@ -240,6 +241,7 @@ export default function SpeechLab() {
             <Plus className="w-4 h-4 mr-2" />
             New Speech
           </Button>
+
         )}
       </div>
 

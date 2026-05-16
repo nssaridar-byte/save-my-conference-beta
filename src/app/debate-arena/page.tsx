@@ -1,480 +1,435 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, type Variants, AnimatePresence } from "framer-motion";
-import {
-  Swords,
-  Sparkles,
-  Users,
-  FileText,
-  Globe,
-  BookOpen,
-  CheckCircle2,
-  AlertCircle,
-} from "lucide-react";
+import { motion, type Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { withSubscriptionGate } from "@/components/subscription-gate";
-import { useLibraryStore } from "@/hooks/use-library";
+import {
+  Zap,
+  Shield,
+  ChevronRight,
+  CheckCircle2,
+  Skull,
+  Radio,
+  Activity,
+  Terminal as TerminalIcon,
+  Swords
+} from "lucide-react";
+import { UseConference } from "../../../contexts/ConferenceContext";
 
-const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+const loadingMessages = [
+  "Analyzing Delegate Profiles...",
+  "Reviewing Committee Guidelines...",
+  "Synthesizing Research Documents...",
+  "Formulating Opening Statements...",
+];
+
+const container: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.1 } },
 };
 
-const staggerContainer: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
+const item: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  show: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
+    y: 0,
+    transition: { type: "spring", stiffness: 300, damping: 24 },
   },
 };
 
-const RebuttalButton = withSubscriptionGate(
-  ({ onClick, isLoading }: { onClick: () => void; isLoading?: boolean }) => (
-    <Button
-      onClick={onClick}
-      disabled={isLoading}
-      className="w-full py-6 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-geist font-bold text-lg shadow-xl shadow-primary/20 transition-all active:scale-95 group"
-    >
-      {isLoading ? (
-        <span className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 animate-pulse" />
-          Processing Strategy...
-        </span>
-      ) : (
-        <span className="flex items-center gap-2">
-          <Swords className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-          Enter the Arena
-        </span>
-      )}
-    </Button>
-  ),
-  "debates",
-  "debates",
-);
-
 export default function DebateArena() {
-  const { documents } = useLibraryStore();
-  const [yourCountry, setYourCountry] = useState("");
-  const [opponentCountry, setOpponentCountry] = useState("");
-  const [topic, setTopic] = useState("");
-  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
-  const [isSimulating, setIsSimulating] = useState(false);
-  const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [difficulty, setDifficulty] = useState<string>("Constructive");
+  const [simulationData, setSimulationData] = useState<Record<string, unknown> | null>(null);
+  const [eventsLoading, setEventsLoading] = useState<boolean>(false);
+  const [loadingStep, setLoadingStep] = useState(0);
+  const [directive, setDirective] = useState("");
+  const [fetchingResults, setFetchingResults] = useState<boolean>(false);
+  const [results, setResults] = useState<Record<string, unknown> | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
+  const { conference } = UseConference();
 
-  const researchFiles = documents.filter((d) => d.type !== "Folder");
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (eventsLoading) {
+      interval = setInterval(() => {
+        setLoadingStep((s) => (s + 1) % loadingMessages.length);
+      }, 1500);
+    }
+    return () => clearInterval(interval);
+  }, [eventsLoading]);
 
-  const handleGenerateScenario = () => {
-    setIsGeneratingScenario(true);
-    // Mocking scenario generation
+  const startSimulation = () => {
+    if (!conference?.id) {
+      setError("Please select a conference first in the header.");
+      return;
+    }
+    setError(null);
+    setEventsLoading(true);
+    setResults(null);
+    setSimulationData(null);
+
+    // Mock API call for scenario generation
     setTimeout(() => {
-      setOpponentCountry("China");
-      setTopic(
-        "Implementation of binding multilateral frameworks for cyber-sovereignty and international data protection standards.",
-      );
-      setIsGeneratingScenario(false);
-    }, 1500);
+      setSimulationData({
+        scenario_title: "Operation Cyber-Sovereignty",
+        opponent_country: "China",
+        topic: "Implementation of binding multilateral frameworks for cyber-sovereignty and international data protection standards.",
+        global_context: "Global tensions are high regarding data privacy.",
+        initial_argument: {
+          severity: "HIGH",
+          region: "ASIA",
+          text: `The delegation of ${conference?.country || "your country"} fails to recognize the fundamental sovereign rights involved in this topic. While their proposition on cyber-sovereignty sounds noble, it ignores the practical implementation challenges we've outlined in our position paper. Specifically, the framework doesn't account for national security protocols...`
+        },
+        threat_actors: ["China", "Russian Federation"],
+        intelligence: {
+          weakPoints: ["Lack of clear definitions on 'cyber-attack'", "Ambiguous enforcement mechanisms"]
+        }
+      });
+      setEventsLoading(false);
+    }, 4500);
   };
 
-  const handleStartDebate = () => {
-    if (!yourCountry || !opponentCountry || !topic) return;
-    setIsSimulating(true);
-    // Mocking AI response generation
+  const handleSubmit = () => {
+    if (!directive.trim()) return;
+    setError(null);
+    setFetchingResults(true);
+
+    // Mock API call for grading/evaluation
     setTimeout(() => {
-      setAiResponse(
-        `### Opponent Rebuttal: ${opponentCountry}\n\n"The delegation of ${yourCountry} fails to recognize the fundamental sovereign rights involved in this topic. While their proposition on '${topic}' sounds noble, it ignores the practical implementation challenges we've outlined in our position paper. Specifically, the IAEA framework doesn't account for national security protocols..."`,
-      );
-      setIsSimulating(false);
-    }, 2500);
+      setResults({
+        overall_grade: "A-",
+        total_score: 92,
+        master_verdict: "Strong Defense",
+        in_character_briefing: "Your rebuttal successfully neutralized the opponent's core argument while maintaining diplomatic poise. The emphasis on collaborative enforcement mechanisms resonated well with the neutral bloc.",
+        event_outcomes: [
+          { event_id: 0, status: "Resolved", impact_note: "Opponent's attack successfully deflected." }
+        ],
+        feedback: {
+          strengths: ["Clear logical structure", "Strong use of precedents", "Diplomatic tone"],
+          weaknesses: ["Could use more statistical backing", "Slightly verbose"],
+          strategic_tip: "Focus on leveraging allied support in your next rebuttal to overwhelm isolated opposition."
+        }
+      });
+      setFetchingResults(false);
+    }, 3000);
   };
 
-  const toggleFile = (id: string) => {
-    setSelectedFiles((prev) =>
-      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id],
-    );
+  const resetSimulation = () => {
+    setSimulationData(null);
+    setResults(null);
+    setDirective("");
+    setError(null);
   };
 
-  return (
-    <div className="container mx-auto px-4 w-full min-h-[calc(100vh-8rem)] flex flex-col gap-10 pb-12">
-      {/* Header Section */}
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={fadeUp}
-        className="flex flex-col gap-3"
-      >
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm shadow-primary/5">
-            <Swords className="w-7 h-7 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-4xl md:text-5xl font-playfair font-black text-foreground tracking-tight">
-              Arena
-            </h1>
-            <p className="text-muted-foreground font-geist text-lg">
+  // ─── LANDING ───────────────────────────────────────────────────────────────
+  if (!simulationData && !eventsLoading) {
+    return (
+      <div className="flex flex-col gap-8 pb-8 items-center justify-center min-h-[60vh]">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-2xl w-full text-center space-y-8"
+        >
+          <div className="space-y-4">
+            <h1 className="text-5xl font-playfair font-bold tracking-tight">The Debate Arena</h1>
+            <p className="text-muted-foreground text-xl">
               Master the floor by simulating high-stakes diplomatic confrontation.
             </p>
           </div>
-        </div>
-      </motion.div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 items-stretch">
-        {/* Left Column: Configuration */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={staggerContainer}
-          className="lg:col-span-12 xl:col-span-5 flex flex-col gap-8"
-        >
-          <motion.div
-            variants={fadeUp}
-            className="bg-card border border-border/60 rounded-[2.5rem] p-8 shadow-xl shadow-foreground/5"
-          >
-            <div className="flex items-center gap-3 mb-8">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Globe className="w-5 h-5 text-primary" />
-              </div>
-              <h2 className="font-playfair text-2xl font-bold">
-                Scenario Intelligence
-              </h2>
-            </div>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-4 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium"
+            >
+              {error}
+            </motion.div>
+          )}
 
-            <div className="space-y-8">
-              <div className="space-y-3">
-                <label className="text-[11px] uppercase tracking-[0.2em] font-black text-primary/70 ml-1">
-                  Your Delegation
-                </label>
-                <input
-                  placeholder="Identify your country (e.g. USA)"
-                  value={yourCountry}
-                  onChange={(e) => setYourCountry(e.target.value)}
-                  className="w-full bg-muted/20 border border-border/80 rounded-2xl px-5 py-4 text-sm focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none font-medium shadow-inner"
-                />
-              </div>
-
-              <div className="p-8 rounded-[2rem] bg-muted/5 border-2 border-dashed border-border/40 relative overflow-hidden group min-h-[200px] flex items-center justify-center">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <AnimatePresence mode="wait">
-                  {opponentCountry || topic ? (
-                    <motion.div
-                      key="generated-content"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="space-y-6 w-full"
-                    >
-                      <div className="space-y-2">
-                        <span className="text-[10px] font-black text-primary/60 uppercase tracking-[0.25em]">
-                          Assigned Opponent
-                        </span>
-                        <div className="flex items-center gap-3">
-                          <div className="w-1.5 h-6 bg-primary rounded-full" />
-                          <p className="font-playfair text-2xl font-bold text-foreground">
-                            {opponentCountry}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <span className="text-[10px] font-black text-primary/60 uppercase tracking-[0.25em]">
-                          Debate Motion
-                        </span>
-                        <div className="bg-background/40 backdrop-blur-sm p-5 rounded-2xl border border-border/40 shadow-sm">
-                          <p className="text-base text-foreground/90 leading-relaxed italic font-serif">
-                            "{topic}"
-                          </p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="placeholder"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="py-6 text-center space-y-4"
-                    >
-                      <div className="w-16 h-16 rounded-full bg-primary/5 mx-auto flex items-center justify-center">
-                        <Sparkles className="w-8 h-8 text-primary/20" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-foreground font-bold">Incomplete Mission Intel</p>
-                        <p className="text-xs text-muted-foreground font-medium mt-1 max-w-[200px] mx-auto">
-                          Let AI define your simulation parameters based on your research.
-                        </p>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              <Button
-                variant="outline"
-                onClick={handleGenerateScenario}
-                disabled={isGeneratingScenario || !yourCountry}
-                className={`w-full rounded-[1.5rem] py-8 group transition-all text-lg font-bold font-geist ${
-                  opponentCountry
-                    ? "border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 shadow-lg shadow-primary/5"
-                    : "border-border bg-muted/10 text-muted-foreground hover:bg-muted/20"
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {(["Constructive", "Rebuttal", "Hostile"] as const).map((level) => (
+              <button
+                key={level}
+                onClick={() => setDifficulty(level)}
+                className={`p-6 rounded-3xl border-2 transition-all flex flex-col items-center gap-3 ${
+                  difficulty === level
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-border bg-card text-muted-foreground hover:border-primary/50"
                 }`}
               >
-                {isGeneratingScenario ? (
-                  <span className="flex items-center gap-3">
-                    <Sparkles className="w-5 h-5 animate-spin" />
-                    Calculating Scenario...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-3">
-                    <Sparkles className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                    {opponentCountry
-                      ? "Regenerate Mission"
-                      : "Generate Strategic Scenario"}
-                  </span>
-                )}
-              </Button>
-            </div>
-          </motion.div>
-
-          <motion.div
-            variants={fadeUp}
-            className="bg-card border border-border/60 rounded-[2.5rem] p-8 shadow-xl shadow-foreground/5 flex-1 flex flex-col"
-          >
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <BookOpen className="w-5 h-5 text-primary" />
-                </div>
-                <h2 className="font-playfair text-2xl font-bold">
-                  Intelligence Feed
-                </h2>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black text-primary bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-full tracking-tighter">
-                  {selectedFiles.length} SELECTED
+                {level === "Constructive" && <Shield className="w-8 h-8" />}
+                {level === "Rebuttal" && <Zap className="w-8 h-8" />}
+                {level === "Hostile" && <Skull className="w-8 h-8" />}
+                <span className="font-bold text-lg">{level}</span>
+                <span className="text-xs opacity-60">
+                  {level === "Constructive" && "Structured & Foundational"}
+                  {level === "Rebuttal" && "Dynamic & Tactical"}
+                  {level === "Hostile" && "Aggressive Interrogation"}
                 </span>
-              </div>
-            </div>
+              </button>
+            ))}
+          </div>
 
-            <div className="space-y-4 flex-1 overflow-y-auto pr-3 custom-scrollbar min-h-[300px]">
-              {researchFiles.length > 0 ? (
-                researchFiles.map((file) => (
-                  <button
-                    key={file.id}
-                    onClick={() => toggleFile(file.id)}
-                    className={`w-full flex items-center gap-5 p-5 rounded-[1.5rem] border-2 transition-all text-left group relative overflow-hidden ${
-                      selectedFiles.includes(file.id)
-                        ? "bg-primary/[0.03] border-primary/40 shadow-md translate-x-1"
-                        : "bg-muted/10 border-transparent hover:border-border/60 hover:bg-muted/20"
-                    }`}
-                  >
-                    <div
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
-                        selectedFiles.includes(file.id)
-                          ? "bg-primary text-primary-foreground scale-110 shadow-lg shadow-primary/20"
-                          : "bg-muted text-muted-foreground group-hover:bg-muted/80"
-                      }`}
-                    >
-                      <FileText className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className={`text-base font-bold truncate ${selectedFiles.includes(file.id) ? "text-primary" : "text-foreground"}`}
-                      >
-                        {file.title}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-1 opacity-70">
-                        {file.type}
-                      </p>
-                    </div>
-                    {selectedFiles.includes(file.id) && (
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                        <CheckCircle2 className="w-6 h-6 text-primary" />
-                      </div>
-                    )}
-                  </button>
-                ))
-              ) : (
-                <div className="text-center py-16 px-6 border-2 border-dashed border-border/40 rounded-[2rem] bg-muted/5 flex flex-col items-center justify-center h-full">
-                  <AlertCircle className="w-10 h-10 text-muted-foreground/30 mb-4" />
-                  <p className="text-base text-muted-foreground font-medium italic">
-                    No research documents found.
-                  </p>
-                  <Button
-                    variant="link"
-                    className="text-primary font-bold text-sm mt-4 hover:no-underline"
-                    onClick={() => (window.location.href = "/library")}
-                  >
-                    Upload intelligence now
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-10">
-              <RebuttalButton
-                onClick={handleStartDebate}
-                isLoading={isSimulating}
-              />
-            </div>
-          </motion.div>
+          <Button
+            type="button"
+            onClick={startSimulation}
+            className="w-full py-8 rounded-3xl text-xl font-bold bg-primary hover:bg-primary/90 flex items-center justify-center gap-3 transition-transform active:scale-[0.98]"
+          >
+            Enter Arena <ChevronRight className="w-6 h-6" />
+          </Button>
         </motion.div>
+      </div>
+    );
+  }
 
-        {/* Right Column: AI Opponent / Results */}
+  // ─── LOADING ───────────────────────────────────────────────────────────────
+  if (eventsLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8 py-12">
         <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={fadeUp}
-          className="lg:col-span-12 xl:col-span-7"
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20"
         >
-          <div className="bg-card border border-border/60 rounded-[3rem] h-full shadow-2xl relative overflow-hidden flex flex-col group/arena min-h-[800px]">
-            {/* Background Texture/Accents */}
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full -mr-64 -mt-64 blur-[120px] pointer-events-none group-hover/arena:bg-primary/10 transition-colors duration-1000" />
-            
-            {/* Header of card */}
-            <div className="flex items-center justify-between p-8 border-b border-border/40 bg-muted/5 rounded-t-[2.5rem]">
-              <div className="flex items-center gap-6">
-                <div className="w-1.5 h-10 bg-primary/40 rounded-full" />
-                <div>
-                  <h3 className="font-playfair text-3xl font-black text-foreground tracking-tight">
-                    Strategic Analysis
-                  </h3>
-                  <div className="flex items-center gap-2.5 mt-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)] animate-pulse" />
-                    <span className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.25em]">
-                      Systems Nominal
+          <Swords className="w-12 h-12 text-primary" />
+        </motion.div>
+        <div className="text-center space-y-4 max-w-sm">
+          <h2 className="text-xl font-bold tracking-[0.2em] uppercase text-foreground">
+            {loadingMessages[loadingStep]}
+          </h2>
+          <div className="w-48 h-1 bg-muted rounded-full overflow-hidden mx-auto">
+            <motion.div
+              className="h-full bg-primary"
+              initial={{ width: "0%" }}
+              animate={{ width: "100%" }}
+              transition={{ duration: 4.5, ease: "linear" }}
+            />
+          </div>
+          <p className="text-sm text-muted-foreground">Preparing diplomatic battlefield...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── SIMULATION ACTIVE ─────────────────────────────────────────────────────
+  return (
+    <div className="flex flex-col gap-6 pb-12">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card/50 p-6 rounded-3xl border border-border/50">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <Activity className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-playfair font-bold">{(simulationData as any).scenario_title}</h2>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase font-bold tracking-wider">
+              <span className="px-2 py-0.5 rounded bg-primary/20 text-primary">Mode: {difficulty}</span>
+              <span>•</span>
+              <span className="truncate max-w-sm">{(simulationData as any).topic}</span>
+            </div>
+          </div>
+        </div>
+        <Button variant="outline" onClick={resetSimulation} className="rounded-full">
+          Withdraw
+        </Button>
+      </div>
+
+      {/* Error banner */}
+      {error && (
+        <div className="p-4 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium">
+          {error}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left: Events + Response */}
+        <div className="lg:col-span-8 flex flex-col gap-6">
+          {/* Intelligence Feed */}
+          <motion.div variants={container} initial="hidden" animate="show" className="space-y-4">
+              <motion.div
+                variants={item}
+                className={`p-6 rounded-3xl border-l-4 bg-card shadow-sm border-l-primary`}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded uppercase border bg-primary/10 text-primary border-primary/20">
+                      Opponent: {(simulationData as any).opponent_country}
+                    </span>
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase">
+                      Opening Statement
                     </span>
                   </div>
+                  <span className="text-[10px] font-mono text-muted-foreground flex items-center gap-1">
+                    <Radio className="w-3 h-3" /> T+00M
+                  </span>
                 </div>
+                <div className="text-foreground leading-relaxed text-sm font-medium italic border-l-2 border-primary/20 pl-4 py-2 my-2">
+                  &quot;{(simulationData as any).initial_argument.text}&quot;
+                </div>
+              </motion.div>
+          </motion.div>
+
+          {/* Response input — hide after results are shown */}
+          {!results && (
+            <div className="bg-card rounded-3xl border border-border/50 p-8 flex flex-col gap-6">
+              <div className="flex items-center gap-3">
+                <TerminalIcon className="w-5 h-5 text-primary" />
+                <h3 className="font-bold text-lg">Rebuttal Protocol</h3>
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="icon" className="rounded-2xl border-border/60 hover:bg-primary/5 group/btn">
-                  <Sparkles className="w-5 h-5 text-primary group-hover/btn:scale-110 transition-transform" />
+              <textarea
+                value={directive}
+                onChange={(e) => setDirective(e.target.value)}
+                placeholder="Draft and execute a comprehensive rebuttal..."
+                className="min-h-[200px] bg-background/50 border border-border/30 rounded-2xl p-6 font-mono text-sm resize-none focus:ring-1 focus:ring-primary focus:outline-none"
+              />
+              <div className="flex justify-between items-center">
+                <p className="text-xs text-muted-foreground italic">
+                  Submit a response dismantling the opponent&apos;s core arguments.
+                </p>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!directive.trim() || fetchingResults}
+                  className="px-8 rounded-full"
+                >
+                  {fetchingResults ? "Analyzing Strategy..." : "Deliver Speech"}
                 </Button>
               </div>
             </div>
+          )}
 
-            <div className="flex-1 p-8 lg:p-10 overflow-y-auto custom-scrollbar">
-              <AnimatePresence mode="wait">
-                {isSimulating ? (
-                  <motion.div
-                    key="simulating"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="flex flex-col items-center justify-center h-full text-center gap-8 py-20"
-                  >
-                    <div className="relative">
-                      <div className="w-28 h-28 rounded-full border-[6px] border-primary/5 border-t-primary animate-spin" />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <motion.div
-                          animate={{ scale: [1, 1.2, 1] }}
-                          transition={{ repeat: Infinity, duration: 2 }}
-                        >
-                          <Swords className="w-10 h-10 text-primary" />
-                        </motion.div>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <h4 className="font-playfair text-2xl font-black text-foreground">
-                        Decoding Stance...
-                      </h4>
-                      <p className="text-muted-foreground text-base max-w-[400px] leading-relaxed mx-auto font-geist">
-                         Cross-referencing your research briefs with global committee guides.
-                      </p>
-                    </div>
-                  </motion.div>
-                ) : aiResponse ? (
-                  <motion.div
-                    key="response"
-                    initial={{ opacity: 0, scale: 0.99 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-playfair prose-headings:text-primary"
-                  >
-                    <div className="space-y-2">
-                      {aiResponse.split('\n').filter(line => line.trim() !== "").map((line, i) => {
-                        if (line.startsWith('###')) {
-                          return (
-                            <div key={i} className="mb-8 pt-4">
-                              <h3 className="text-3xl font-black tracking-tight text-primary">
-                                {line.replace('###', '').trim()}
-                              </h3>
-                              <div className="w-20 h-1.5 bg-primary/20 rounded-full mt-2" />
-                            </div>
-                          );
-                        }
-                        return (
-                          <p key={i} className="text-lg leading-relaxed text-foreground/80 font-geist mb-6">
-                            {line.startsWith('"') ? <span className="italic opacity-90 border-l-4 border-primary/20 pl-6 block my-8 text-xl font-serif">"{line.replace(/"/g, '')}"</span> : line}
-                          </p>
-                        );
-                      })}
-                    </div>
+          {/* After-Action Report */}
+          {results && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col gap-6"
+            >
+              {/* Success banner */}
+              <div className="p-5 rounded-2xl bg-green-500/5 border border-green-500/20 flex items-center gap-4 text-green-600 font-bold">
+                <CheckCircle2 className="w-6 h-6 shrink-0" />
+                Rebuttal delivered. After-Action Report compiled below.
+              </div>
 
-                    <div className="mt-16 pt-10 border-t border-border/40">
-                      <div className="flex items-center gap-3 mb-8">
-                        <div className="p-2.5 bg-primary/10 rounded-xl">
-                          <Users className="w-6 h-6 text-primary" />
-                        </div>
-                        <h4 className="font-playfair text-2xl font-black tracking-tight">
-                          Arena Tactics
-                        </h4>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {[
-                          "Challenge their OP3 clause using your research brief findings.",
-                          "Pivote to humanitarian concerns to gain neutral bloc support.",
-                          "Request a 1:1 unmoderated caucus with their key ally.",
-                          "Utilize Point of Parliamentary Inquiry on their sovereignty claim."
-                        ].map((tactic, i) => (
-                          <div
-                            key={i}
-                            className="bg-muted/10 border border-border/40 rounded-[1.5rem] p-6 flex items-start gap-4 hover:border-primary/30 transition-colors group/tactic"
-                          >
-                            <span className="text-primary font-black text-lg bg-primary/5 w-8 h-8 flex items-center justify-center rounded-lg group-hover/tactic:bg-primary group-hover/tactic:text-white transition-colors">
-                              {i + 1}
-                            </span>
-                            <p className="text-sm text-foreground/80 font-bold leading-relaxed pt-1">
-                              {tactic}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </motion.div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-center gap-10 opacity-30 py-20">
-                    <div className="relative">
-                      <div className="w-40 h-40 rounded-[2.5rem] bg-muted/50 flex items-center justify-center border-4 border-dashed border-border/60 rotate-3" />
-                      <div className="absolute inset-0 flex items-center justify-center -rotate-3">
-                        <Swords className="w-20 h-20 text-muted-foreground" />
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <p className="font-playfair text-3xl font-black text-foreground uppercase tracking-widest">
-                        Awaiting Conflict
-                      </p>
-                      <p className="text-lg text-muted-foreground font-geist font-medium">
-                        Configure your mission on the left to begin the simulation.
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Subtle Footer inside card */}
-            <div className="p-8 bg-muted/10 border-t border-border/40 rounded-b-[3rem] backdrop-blur-sm mt-auto">
-              <div className="flex items-center justify-between text-[11px] font-black text-muted-foreground/50 tracking-[0.3em] uppercase">
-                <div className="flex items-center gap-3">
-                  <span className="w-2 h-2 rounded-full bg-primary/30" />
-                  <span>Model Intelligence v4.2</span>
+              {/* Strengths / Weaknesses / Tip */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-6 rounded-3xl border border-green-500/20 bg-green-500/5">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-green-600 mb-4">
+                    Strategic Strengths
+                  </h4>
+                  <ul className="text-xs space-y-2">
+                    {((results as any).feedback?.strengths ?? []).map((s: string, i: number) => (
+                      <li key={i} className="flex gap-2">
+                        <span>•</span> {s}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <span>Ready for {yourCountry || "Delegate"}</span>
+                <div className="p-6 rounded-3xl border border-destructive/20 bg-destructive/5">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-destructive mb-4">
+                    Critical Weaknesses
+                  </h4>
+                  <ul className="text-xs space-y-2">
+                    {((results as any).feedback?.weaknesses ?? []).map((w: string, i: number) => (
+                      <li key={i} className="flex gap-2">
+                        <span>•</span> {w}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="p-6 rounded-3xl border border-amber-500/20 bg-amber-500/5">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-amber-600 mb-4">
+                    Chair&apos;s Strategic Tip
+                  </h4>
+                  <p className="text-xs leading-relaxed">{(results as any).feedback?.strategic_tip}</p>
+                </div>
+              </div>
+
+              <Button variant="outline" onClick={resetSimulation} className="w-full rounded-full">
+                New Debate
+              </Button>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Right: Strategic Dashboard */}
+        <div className="lg:col-span-4 flex flex-col gap-6">
+          <div className="rounded-3xl border border-border/50 bg-card p-6 space-y-6">
+            <h3 className="font-bold border-b border-border/50 pb-4 flex items-center gap-2">
+              <Shield className="w-4 h-4 text-primary" /> Debate Dashboard
+            </h3>
+
+            <div className="space-y-4">
+              {/* Threat Actors */}
+              <div className="p-4 rounded-2xl bg-muted/30 border border-border/50 flex flex-col gap-2">
+                <span className="text-[10px] font-black uppercase text-muted-foreground">Opposing Bloc</span>
+                <div className="flex flex-wrap gap-2">
+                  {((simulationData as any).threat_actors ?? []).map((tag: string) => (
+                    <span
+                      key={tag}
+                      className="px-2 py-1 rounded bg-destructive/10 text-destructive text-[10px] font-bold border border-destructive/20"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Intelligence Focus */}
+              <div className="p-4 rounded-2xl bg-muted/30 border border-border/50 flex flex-col gap-1">
+                <span className="text-[10px] font-black uppercase text-muted-foreground">
+                  Debate Focus Areas
+                </span>
+                <p className="text-xs font-medium text-foreground pt-1">
+                  {((simulationData as any).intelligence?.weakPoints?.length ?? 0) > 0
+                    ? (simulationData as any).intelligence.weakPoints.join(", ")
+                    : "General Policy Discourse"}
+                </p>
+              </div>
+
+              {/* Risk Level */}
+              <div className="p-4 rounded-2xl bg-muted/30 border border-border/50 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-black uppercase text-muted-foreground">Intensity</span>
+                  <p className="text-lg font-bold text-foreground">
+                    {difficulty === "Hostile" ? "CRITICAL" : difficulty === "Rebuttal" ? "HIGH" : "MEDIUM"}
+                  </p>
+                </div>
+                {!results && (
+                  <div className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+                )}
+                {results && <CheckCircle2 className="w-10 h-10 text-green-500" />}
               </div>
             </div>
           </div>
-        </motion.div>
+
+          {/* Final Verdict */}
+          {results && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="rounded-3xl border border-primary/20 bg-primary/5 p-6 space-y-4"
+            >
+              <div className="flex justify-between items-center">
+                <h3 className="font-bold">Debate Score</h3>
+                <span className="text-4xl font-black text-primary">{(results as any).overall_grade}</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-background/50 border border-primary/10 italic text-sm text-foreground/90 leading-relaxed">
+                &ldquo;{(results as any).in_character_briefing}&rdquo;
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
+                <span>Outcome</span>
+                <span className="font-bold text-foreground">{(results as any).master_verdict}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
+                <span>Total Score</span>
+                <span className="font-bold text-foreground">{(results as any).total_score} / 100</span>
+              </div>
+            </motion.div>
+          )}
+        </div>
       </div>
     </div>
   );
