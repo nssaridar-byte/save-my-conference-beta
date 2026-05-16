@@ -40,7 +40,7 @@ export const POST = withAuth(
 
       if ((!isPro || userObj.role == "FREE") && usage) {
         // If the usage count including the one he is making is equal to the limit, update the limit hit at but still allow it to pass through
-        if (usage.quizzesCount + 1 == 5) {
+        if (usage.quizzesCount + 1 == 100) {
           await prisma.usage.update({
             where: {
               userId: user.id,
@@ -51,7 +51,7 @@ export const POST = withAuth(
           });
         }
         // If the speechesCount is more than or equal to 3, throw an error
-        if (usage.quizzesCount >= 5)
+        if (usage.quizzesCount >= 100)
           return new Response("Usage limit reached", { status: 403 });
       }
       const conference = await prisma.conference.findUnique({

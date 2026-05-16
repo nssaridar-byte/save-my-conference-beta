@@ -11,26 +11,32 @@ export const GET = withAuth(
     try {
       const { id } = await context.params;
 
-      const conference = await prisma.conference.findUnique({
-        where: {
-          id,
-        },
-      });
-      if (!conference)
-        return new Response("Conference not found", { status: 404 });
+      if (!id || id === "undefined" || id === "null") {
+        return Response.json({ files: [] });
+      }
+
+      console.log(`[FILES_API] Fetching files for: ${id} (User: ${user.id})`);
+      
+      const whereClause: any = { userId: user.id };
+      if (id !== "all") {
+        whereClause.conferenceId = id;
+      }
 
       const files = await prisma.file.findMany({
-        where: {
-          conferenceId: conference.id,
-        },
+        where: whereClause,
+        orderBy: {
+          createdAt: "desc"
+        }
       });
-      if (files.length == 0)
-        return new Response("No files found", { status: 404 });
-
+      
+      console.log(`[FILES_API] Found ${files.length} files`);
+      
       return Response.json({ files });
-    } catch (error) {
-      return new Response("");
+    } catch (error: any) {
+      console.error("[FILES_API] ERROR:", error.message);
+      return new Response(error.message, { status: 500 });
     }
+
   },
 );
 export const DELETE = withAuth(
@@ -42,20 +48,53 @@ export const DELETE = withAuth(
     try {
       const { id } = await context.params;
 
-      const file = await prisma.file.findUnique({ where: { id } });
+      const file = await prisma.file.findFirst({ 
+        where: { id, userId: user.id } 
+      });
 
-      if (!file) return new Response("File not found", { status: 404 });
+      if (!file) return new Response("File not found or unauthorized", { status: 404 });
 
-      await utapi.deleteFiles(file.id);
+      try {
+        await utapi.deleteFiles(file.id);
+      } catch (utError) {
+        console.warn("Failed to delete file from UploadThing:", utError);
+      }
 
       await prisma.file.delete({
         where: {
           id,
         },
       });
-      return new Response("File deleted successfully");
+      return new Response("File deleted successfully", { status: 200 });
+    } catch (error: any) {
+      console.error("Delete Error:", error);
+      return new Response("Failed to delete", { status: 500 });
+    }
+  },
+);
+export const PATCH = withAuth(
+  async (
+    req: Request,
+    user: AuthUser,
+    context: { params: Promise<{ id: string }> },
+  ) => {
+    try {
+      const { id } = await context.params;
+      const { isSelected } = await req.json();
+
+      const file = await prisma.file.findFirst({ 
+        where: { id, userId: user.id } 
+      });
+      if (!file) return new Response("File not found or unauthorized", { status: 404 });
+
+      const updated = await prisma.file.update({
+        where: { id },
+        data: { isSelected },
+      });
+
+      return Response.json({ file: updated });
     } catch (error) {
-      return new Response("");
+      return new Response("Error updating file", { status: 500 });
     }
   },
 );

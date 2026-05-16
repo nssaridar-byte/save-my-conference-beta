@@ -58,6 +58,8 @@
   --popover: #ffffff;
   --popover-foreground: #1a1a1a;
   --primary: #800020;
+  --primary-rgb: 128, 0, 32;
+
   --primary-foreground: #fdfbf7;
   --secondary: #f0e8df;
   --secondary-foreground: #800020;
@@ -95,6 +97,8 @@
   --popover: #131e35;
   --popover-foreground: #f0f4f8;
   --primary: #a0002a;
+  --primary-rgb: 160, 0, 42;
+
   --primary-foreground: #f0f4f8;
   --secondary: #1c2d4c;
   --secondary-foreground: #f0f4f8;

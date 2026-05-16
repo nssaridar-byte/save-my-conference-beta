@@ -21,12 +21,13 @@ model User {
   verificationCode String?
   conferences      Conference[]
   files            File[]
-  speeches         Speech[]
+  knownDevices     KnownDevice[]
   quizes           Quiz[]
+  speeches         Speech[]
   subscription     Subscription?
+  tokenUsages      TokenUsage[]
   usage            Usage?
-  tokenUsages     TokenUsage[]
-  knownDevices    KnownDevice[]
+  crisis           Crisis[]
 }
 
 model KnownDevice {
@@ -44,11 +45,11 @@ model KnownDevice {
 model TokenUsage {
   id               String   @id @default(cuid())
   userId           String
-  feature          String   // e.g., "speech-analyze", "quiz-gen", "crisis-gen", "crisis-eval"
+  feature          String
   promptTokens     Int
   completionTokens Int
   totalTokens      Int
-  cost             Float    // Calculated cost in USD
+  cost             Float
   createdAt        DateTime @default(now())
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -91,25 +92,28 @@ model Speech {
   conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
 model Quiz {
-  id String @id @default(cuid())
+  id           String     @id @default(cuid())
   conferenceId String
-  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
-  questions Json?
-  userId String
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  questions    Json?
+  userId       String
+  createdAt    DateTime   @default(now())
+  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
 model File {
-  id        String   @id @default(cuid())
-  userId    String
-  conferenceId String
-  conference Conference @relation(fields: [conferenceId], references: [id])
-  name      String
-  url       String
-  isPublic  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String      @id @default(cuid())
+  userId       String
+  conferenceId String?
+  name         String
+  url          String
+  isPublic     Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  isSelected   Boolean     @default(false)
+  conference   Conference? @relation(fields: [conferenceId], references: [id])
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Conference {
@@ -123,19 +127,24 @@ model Conference {
   authorId  String
   topic     String
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  speeches  Speech[]
-  quizes    Quiz[]
   crisis    Crisis[]
-  file File[]
+  file      File[]
+  quizes    Quiz[]
+  speeches  Speech[]
 }
+
 model Crisis {
-  id String @id @default(cuid())
+  id           String     @id @default(cuid())
+  userId       String
   conferenceId String
-  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
-  events Json?
-  response String?
-  createdAt DateTime @default(now())
+  events       Json?
+  response     String?
+  evaluation   Json?
+  createdAt    DateTime   @default(now())
+  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
 enum Role {
   FREE
   PRO

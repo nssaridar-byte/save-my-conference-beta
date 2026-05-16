@@ -14,137 +14,202 @@ export const GET = withAuth(
     try {
       const { id } = await context.params;
 
-      const conference = await prisma.conference.findUnique({ where: { id } });
-      const userObj = await prisma.user.findUnique({
-        where: {
-          id: user.id,
-        },
-        include: {
-          subscription: true,
-        },
+      if (!process.env.GEMINI_API_KEY) {
+        return new Response("GEMINI_API_KEY is missing.", { status: 500 });
+      }
+
+      const { searchParams } = new URL(req.url);
+      const difficulty = searchParams.get("difficulty") || "Advanced";
+
+      const conferenceId = String(id);
+      console.log(`[CRISIS_GEN] Initializing for conference: ${conferenceId}`);
+
+      const conference = await prisma.conference.findUnique({ 
+        where: { id: conferenceId } 
       });
+      const userObj = await prisma.user.findUnique({
+        where: { id: String(user.id) },
+        include: { subscription: true },
+      });
+
       if (!userObj) return new Response("User not found", { status: 404 });
       if (!conference)
         return new Response("Conference not found", { status: 404 });
 
       const usage = await prisma.usage.findUnique({
-        where: {
-          userId: user.id,
-        },
+        where: { userId: user.id },
       });
-      // The user has a pro subscription if the user subscription is valid
+
       const isPro =
         userObj.subscription &&
         (await subscriptionValid(
           userObj.subscription as unknown as Subscription,
         ));
-      // Check if the user doesn't have (the pro subscription or if he is on the free tier ) and that he has accumalated some usage
 
       if ((!isPro || userObj.role == "FREE") && usage) {
-        // If the usage count including the one he is making is equal to the limit, update the limit hit at but still allow it to pass through
-
-        if (usage.crisisCount + 1 >= 1) {
+        if (usage.crisisCount + 1 >= 100) {
           await prisma.usage.update({
-            where: {
-              userId: user.id,
-            },
-            data: {
-              crisisLimitHitAt: new Date(),
-            },
+            where: { userId: user.id },
+            data: { crisisLimitHitAt: new Date() },
           });
         }
-        // If the speechesCount is more than or equal to 3, throw an error
-        if (usage.crisisCount >= 1)
+        if (usage.crisisCount >= 100)
           return new Response("Usage limit reached", { status: 403 });
       }
 
-      const prompt = `You are a Crisis Director for a Model United Nations (MUN) simulation. Your task is to generate exactly 3 subsequent crisis "updates" that follow a logical
-      escalation or expansion of the situation described in the Initial Event, specifically tailored to the provided Committee Topic.
-    2
-    3 **Committee Topic:**
-    4 ${conference.topic}
-    5
-    6 **Initial Event:**
-    7 { severity: "HIGH", text: "Satellite telemetry indicates unexpected military movement near the 38th parallel.", region: "East Asia" }
-    8
-    9 **Instructions:**
-   10 1. **Thematic Relevance:** Ensure every update is directly connected to the Committee Topic (e.g., if the topic is "Nuclear Non-Proliferation," focus the updates
-      on warheads or inspections).
-   11 2. **Progression:** Each update should feel like a "breaking news" headline.
-   12 3. **Escalation:** At least one update should be "CRITICAL".
-   13 4. **Specificity:** Mention specific actors, diplomatic actions, or humanitarian impacts (e.g., troop crossings, cyberattacks, emergency UNSC sessions).
-   14 5. **Output Format:** Return ONLY a JSON array containing 3 objects with keys: "severity", "text", and "region".
-   15
-   16 **Schema Example:**
-   17 [
-   18   { "severity": "...", "text": "...", "region": "..." }
-   19 ]`;
+      // Intelligence Gathering
+      const speeches = await prisma.speech.findMany({
+        where: { userId: user.id, conferenceId: id },
+        select: { feedback: true },
+      });
 
-      const result = await ai.models.generateContent({
+      // Intelligence Gathering with relation include for robustness
+      const conferenceWithFiles = await prisma.conference.findUnique({
+        where: { id },
+        include: {
+          file: {
+            where: { isSelected: true },
+            select: { name: true },
+          },
+        },
+      });
+
+      let research = conferenceWithFiles?.file || [];
+
+      // Fallback if no files selected
+      if (research.length === 0) {
+        const conferenceAllFiles = await prisma.conference.findUnique({
+          where: { id },
+          include: {
+            file: {
+              select: { name: true },
+            },
+          },
+        });
+        research = conferenceAllFiles?.file || [];
+      }
+
+
+      const weakPoints = speeches
+        .map((s: any) => s.feedback?.feedback?.weaknesses || [])
+        .flat()
+        .slice(0, 5);
+
+      const researchNames = research.map((f: any) => f.name).join(", ");
+
+      const prompt = `You are an Elite MUN Crisis Director. 
+      Create a "Precision Intelligence Simulation" for the delegate of ${conference.country} in ${conference.committee} on the topic of "${conference.topic}".
+
+      DIFFICULTY LEVEL: ${difficulty}
+      (Beginner: Linear/Clear | Advanced: Complex/Multilateral | Chaos: Extreme/Unpredictable)
+
+      INTELLIGENCE CONTEXT:
+      - Research Dossier: ${researchNames || "Standard Intelligence"}
+      - Delegate Vulnerabilities: ${weakPoints.length > 0 ? weakPoints.join(", ") : "No specific weaknesses found."}
+
+      Your task is to generate a comprehensive crisis narrative that specifically targets ${conference.country} and its known geopolitical rivals.
+
+      REQUIREMENTS:
+      1. Scenario Title: A high-stakes operation name.
+      2. Threat Actors: Identify 2 specific countries or organizations that are acting against the delegate's interests.
+      3. Global Context: A one-sentence briefing on the geopolitical climate.
+      4. Initial Event: The catalyst.
+      5. Updates: A sequence of 3 rapidly escalating follow-up events.
+
+      OUTPUT FORMAT:
+      Return ONLY a JSON object with this structure:
+      {
+        "scenario_title": "...",
+        "threat_actors": ["...", "..."],
+        "global_context": "...",
+        "initial_event": { "severity": "HIGH", "text": "...", "region": "..." },
+        "updates": [
+          { "severity": "...", "text": "...", "region": "..." },
+          { "severity": "...", "text": "...", "region": "..." },
+          { "severity": "CRITICAL", "text": "...", "region": "..." }
+        ]
+      }`;
+
+      const result = ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
           responseSchema: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                severity: {
-                  type: "string",
-                  enum: ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+            type: "OBJECT",
+            properties: {
+              scenario_title: { type: "STRING" },
+              threat_actors: { type: "ARRAY", items: { type: "STRING" } },
+              global_context: { type: "STRING" },
+              initial_event: {
+                type: "OBJECT",
+                properties: {
+                  severity: { type: "STRING" },
+                  text: { type: "STRING" },
+                  region: { type: "STRING" }
                 },
-                text: {
-                  type: "string",
-                },
-                region: {
-                  type: "string",
-                },
+                required: ["severity", "text", "region"]
               },
-              required: ["severity", "text", "region"],
+              updates: {
+                type: "ARRAY",
+                items: {
+                  type: "OBJECT",
+                  properties: {
+                    severity: { type: "STRING" },
+                    text: { type: "STRING" },
+                    region: { type: "STRING" }
+                  },
+                  required: ["severity", "text", "region"]
+                }
+              }
             },
-          },
+            required: ["scenario_title", "threat_actors", "global_context", "initial_event", "updates"]
+          }
         },
       });
 
-      if (!process.env.GEMINI_API_KEY) {
-        return new Response("GEMINI_API_KEY is missing from environment variables. Please check your .env file.", { status: 500 });
+      const aiResponse = await result;
+      let data;
+      try {
+        data = JSON.parse(aiResponse.text as string);
+      } catch (e) {
+        console.error("[CRISIS_GEN] Failed to parse AI response:", aiResponse.text);
+        return new Response("AI generated invalid data. Please try again.", { status: 500 });
       }
 
-      const aiResponse = await result;
-      const crisis = JSON.parse(aiResponse.text as string);
-
-      // Record token usage
       if (aiResponse.usageMetadata) {
         await recordTokenUsage(user.id, "crisis-gen", aiResponse.usageMetadata);
       }
-      console.log(crisis);
-      console.log("user id: " + user.id);
 
-      await prisma.usage.upsert({
-        where: {
+      const crisisRecord = await prisma.crisis.create({
+        data: {
           userId: user.id,
-        },
-        update: {
-          crisisCount: {
-            increment: 1,
-          },
-        },
-        create: {
-          userId: user.id,
-          crisisCount: 1,
+          conferenceId: id,
+          events: data,
         },
       });
-      return Response.json({ crisis });
+
+      await prisma.usage.upsert({
+        where: { userId: user.id },
+        update: { crisisCount: { increment: 1 } },
+        create: { userId: user.id, crisisCount: 1 },
+      });
+
+      return Response.json({
+        ...data,
+        crisisId: crisisRecord.id,
+        intelligence: {
+          weakPoints,
+          difficulty
+        }
+      });
     } catch (error: any) {
-      console.log(error);
-      if (error.message?.includes("credentials") || error.message?.includes("ADC")) {
-        return new Response(`AI Authentication Error: ${error.message}. Ensure GEMINI_API_KEY is valid.`, { status: 500 });
-      }
-      return new Response(error.message || "An error has occured", { status: 500 });
+      console.error("[CRISIS_GEN] Error:", error);
+      return new Response(`Simulation Error: ${error.message || "An unexpected error occurred"}.`, { status: 500 });
     }
   },
 );
+
 export const POST = withAuth(
   async (
     req: Request,
@@ -154,51 +219,48 @@ export const POST = withAuth(
     try {
       const { id } = await context.params;
 
-      const conference = await prisma.conference.findUnique({
-        where: { id },
-      });
+      if (!process.env.GEMINI_API_KEY) {
+        return new Response("GEMINI_API_KEY is missing.", { status: 500 });
+      }
 
+      const conferenceId = String(id);
+      const conference = await prisma.conference.findUnique({
+        where: { id: conferenceId },
+      });
       if (!conference)
         return new Response("Conference not found", { status: 404 });
 
       const userObj = await prisma.user.findUnique({
-        where: { id: user.id },
+        where: { id: String(user.id) },
         include: { subscription: true },
       });
       if (!userObj) return new Response("User not found", { status: 404 });
 
-      const { crisis, response } = await req.json();
+      const { crisis, response, crisisId } = await req.json();
 
       if (!crisis || !response)
         return new Response("Invalid request", { status: 400 });
 
       const prompt = `You are a Senior Crisis Director for a Model United Nations simulation.
-     A delegate has submitted a **Comprehensive Directive** responding to a series of three rapidly escalating crisis events.
+     A delegate has submitted a **Comprehensive Directive** responding to a series of rapidly escalating crisis events.
     
      CONTEXT:
      - **Committee Topic:** ${conference.topic}
      - **Delegate's Country:** ${conference.country}
-    THE CRISIS TIMELINE (The delegate must address all three):
-     1. ${crisis[0].text} (${crisis[0].severity})
-    2. ${crisis[1].text} (${crisis[1].severity})
-    3. ${crisis[2].text} (${crisis[2].severity})
+    THE CRISIS TIMELINE:
+     1. ${crisis.initial_event.text} (${crisis.initial_event.severity})
+     2. ${crisis.updates[0].text} (${crisis.updates[0].severity})
+    3. ${crisis.updates[1].text} (${crisis.updates[1].severity})
+    4. ${crisis.updates[2].text} (${crisis.updates[2].severity})
    
     TASK:
     Evaluate the delegate's directive. A high-quality response must:
-    1. **Prioritize:** Address the most severe (CRITICAL/HIGH) threats first.
+    1. **Prioritize:** Address the most severe threats first.
     2. **Integrate:** Show how the solutions for one event don't conflict with another.
-   3. **Detail:** Provide specific diplomatic, economic, or military actions for each point.
-   
-    SCORING CRITERIA (1-10):
-    - **Crisis Coverage:** Did they meaningfully address all 3 events? (1-10)
-    - **Strategic Depth:** Are the solutions interconnected and logical? (1-10)
-    - **Diplomatic Realism:** Does it respect international law and country policy? (1-10)
-    - **Urgency Management:** Did they handle the highest severity event effectively? (1-10)
+   3. **Detail:** Provide specific diplomatic, economic, or military actions.
    
     OUTPUT RULES:
     1. Return ONLY a valid JSON object.
-    2. Provide a "Master Verdict" on the overall stability of the region.
-    3. Provide a brief "Status Report" for EACH of the three crisis events based on their response.
    
     JSON STRUCTURE:
     {
@@ -206,80 +268,55 @@ export const POST = withAuth(
       "total_score": 0,
       "master_verdict": "Stable | Fragile | Chaos | Total Collapse",
       "event_outcomes": [
-        { "event_id": 1, "status": "Resolved | Escalated | Ongoing", "impact_note": "1-sentence on the result of their specific action for Event 1." },
-        { "event_id": 2, "status": "Resolved | Escalated | Ongoing", "impact_note": "1-sentence on the result of their specific action for Event 2." },
-        { "event_id": 3, "status": "Resolved | Escalated | Ongoing", "impact_note": "1-sentence on the result of their specific action for Event 3." }
+        { "event_id": 0, "status": "Resolved | Escalated | Ongoing", "impact_note": "Result of Initial Event." },
+        { "event_id": 1, "status": "Resolved | Escalated | Ongoing", "impact_note": "Result of Update 1." },
+        { "event_id": 2, "status": "Resolved | Escalated | Ongoing", "impact_note": "Result of Update 2." },
+        { "event_id": 3, "status": "Resolved | Escalated | Ongoing", "impact_note": "Result of Update 3." }
       ],
       "feedback": {
-        "strengths": ["Concise strength 1", "Concise strength 2"],
-        "weaknesses": ["Concise weakness 1", "Concise weakness 2"],
-        "strategic_tip": "One high-level tip on how to better manage simultaneous crises."
+        "strengths": ["..."],
+        "weaknesses": ["..."],
+        "strategic_tip": "..."
       },
-      "in_character_briefing": "A 3-sentence urgent summary from the Situation Room regarding the new state of the world."
+      "in_character_briefing": "..."
     }
    
     DELEGATE RESPONSE:
     """${response}"""`;
 
-      const result = await ai.models.generateContent({
+      const result = ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
           responseSchema: {
-            type: "object",
+            type: "OBJECT",
             properties: {
-              overall_grade: {
-                type: "string",
-              },
-              total_score: {
-                type: "number",
-              },
-              master_verdict: {
-                type: "string",
-              },
+              overall_grade: { type: "STRING" },
+              total_score: { type: "NUMBER" },
+              master_verdict: { type: "STRING" },
               event_outcomes: {
-                type: "array",
+                type: "ARRAY",
                 items: {
-                  type: "object",
+                  type: "OBJECT",
                   properties: {
-                    event_id: {
-                      type: "number",
-                    },
-                    status: {
-                      type: "string",
-                    },
-                    impact_note: {
-                      type: "string",
-                    },
+                    event_id: { type: "NUMBER" },
+                    status: { type: "STRING" },
+                    impact_note: { type: "STRING" },
                   },
                   required: ["event_id", "status", "impact_note"],
                 },
               },
               feedback: {
-                type: "object",
+                type: "OBJECT",
                 properties: {
-                  strengths: {
-                    type: "array",
-                    items: {
-                      type: "string",
-                    },
-                  },
-                  weaknesses: {
-                    type: "array",
-                    items: {
-                      type: "string",
-                    },
-                  },
-                  strategic_tip: {
-                    type: "string",
-                  },
+                  strengths: { type: "ARRAY", items: { type: "STRING" } },
+                  weaknesses: { type: "ARRAY", items: { type: "STRING" } },
+                  strategic_tip: { type: "STRING" },
                 },
                 required: ["strengths", "weaknesses", "strategic_tip"],
               },
-              in_character_briefing: {
-                type: "string",
-              },
+              in_character_briefing: { type: "STRING" },
             },
             required: [
               "overall_grade",
@@ -293,25 +330,33 @@ export const POST = withAuth(
         },
       });
 
-      if (!process.env.GEMINI_API_KEY) {
-        return new Response("GEMINI_API_KEY is missing from environment variables. Please check your .env file.", { status: 500 });
+      const aiFeedbackResponse = await result;
+      let feedback;
+      try {
+        feedback = JSON.parse(aiFeedbackResponse.text as string);
+      } catch (e) {
+        console.error("[CRISIS_EVAL] Failed to parse AI feedback:", aiFeedbackResponse.text);
+        return new Response("AI generated invalid evaluation. Please try again.", { status: 500 });
       }
 
-      const aiFeedbackResponse = await result;
-      const feedback = JSON.parse(aiFeedbackResponse.text as string);
-
-      // Record token usage
       if (aiFeedbackResponse.usageMetadata) {
         await recordTokenUsage(user.id, "crisis-eval", aiFeedbackResponse.usageMetadata);
       }
 
+      if (crisisId) {
+        await prisma.crisis.update({
+          where: { id: crisisId },
+          data: {
+            response,
+            evaluation: feedback,
+          },
+        });
+      }
+
       return Response.json({ feedback });
     } catch (error: any) {
-      console.log(error);
-      if (error.message?.includes("credentials") || error.message?.includes("ADC")) {
-        return new Response(`AI Authentication Error: ${error.message}. Ensure GEMINI_API_KEY is valid.`, { status: 500 });
-      }
-      return new Response(error.message || "An error has occured", { status: 500 });
+      console.error("[CRISIS_EVAL] Error:", error);
+      return new Response(`Simulation Error: ${error.message || "An unexpected error occurred"}.`, { status: 500 });
     }
   },
 );
