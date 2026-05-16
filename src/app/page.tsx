@@ -19,6 +19,7 @@ import {
   Crown,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
+import { MemorialSection } from "@/components/memorial-section";
 
 const features = [
   {
@@ -187,6 +188,9 @@ export default function LandingPage() {
           ))}
         </motion.div>
       </section>
+
+      {/* ── Memorial ── */}
+      <MemorialSection />
 
       {/* ── Features ── */}
       <section className="py-24 px-6 md:px-16">
