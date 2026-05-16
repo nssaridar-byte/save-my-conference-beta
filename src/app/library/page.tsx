@@ -21,6 +21,7 @@ import { useConferenceStore } from "@/hooks/use-conference";
 import { UseConference } from "../../../contexts/ConferenceContext";
 import axios from "axios";
 import { LocalUpload } from "@/components/LocalUpload";
+import { File as PrismaFile } from "@prisma/client";
 
 
 const container: Variants = {
@@ -63,7 +64,7 @@ const REPO_ITEMS = [
 
 export default function Library() {
   const [activeTab, setActiveTab] = useState<"vault" | "repository">("vault");
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<PrismaFile[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
 
